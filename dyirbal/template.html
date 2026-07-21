@@ -466,51 +466,79 @@
     {%- endmacro %}
 
     <!-- Renders a property for display -->
-      {%- macro displayProp(prop, propData) %}
-        {%- for val in propData.fwd %}
-          <div class="property-row">
-            <div class="property-name">{{ diplayLabel(propData) }}</div>
-            <div class="property-value">
-              {%- if val is string %}
-                {{ val | urlize | replace(r/,(\s+)/, ",&nbsp;") | nl2br | safe }}
-              {%- elif val["url"] %}
-                <a href="{{ val["url"] }}"> {{ val["url"] }}</a>
-              {%- else %}
-                {%- if val["target_id"] %}
-                  <span{%- if not data.hasLayout %} class="button-right"{% endif %}>
-                    <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
-                      {{ val["target_name"] }}
-                    </a>
-                  </span>
-                {%- elif val.value is string %}
-                  {{ val.value | urlize | replace(r/,(\s+)/, ",&nbsp;") | nl2br | safe }}
-                {%- elif val.value %}
-                  {{ val.value }}
-                {%- else %}
-                  WARNING SOMETHING WENT WRONG {{ val | dump }}
-                {%- endif %}
-              {%- endif %}
+    {%- macro displayProp(prop, propData) %}
+      <div class="property-row">
+        {%- if propData.fwd.length > 0 %}
+          <div class="property-name">{{ diplayLabel(propData) }}</div>
+          <div class="property-value">
+            {%- set searchThreshold = config.settings.maxListItemsWithoutSearch if config and config.settings and config.settings.maxListItemsWithoutSearch is not none else 10 %}
+            {%- set isLong = propData.fwd.length + propData.rev.length > searchThreshold %}
+            {%- if isLong %}
+              <input class="border" onkeyup="res = search(this)" />
+              <span class="count">
+                ({{ propData.fwd.length + propData.rev.length }} /
+                {{ propData.fwd.length + propData.rev.length }})</span
+              >
+            {%- endif %}
+            <div class="{{ 'long' if isLong else 'short' }}">
+              {%- for val in propData.fwd %}
+                <div>
+                  {%- if val is string %}
+                    {{ val | urlize | replace(r/,(\s+)/, ",&nbsp;") | nl2br | safe }}
+                  {%- elif val["url"] %}
+                    <a href="{{ val["url"] }}"> {{ val["url"] }}</a>
+                  {%- else %}
+                    {%- if val["target_id"] %}
+                      <span{%- if not data.hasLayout %} class="button-right"{% endif %}>
+                        <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
+                          {{ val["target_name"] }}
+                        </a>
+                      </span>
+                    {%- elif val.value is string %}
+                      {{ val.value | urlize | replace(r/,(\s+)/, ",&nbsp;") | nl2br | safe }}
+                    {%- elif val.value %}
+                      {{ val.value }}
+                    {%- else %}
+                      WARNING SOMETHING WENT WRONG {{ val | dump }}
+                    {%- endif %}
+                  {%- endif %}
+                  
+                </div>
+              {%- endfor %}
             </div>
           </div>
-        {%- endfor %}
-
-        {%- for val in propData.rev %}
-          <div class="property-row">
-            <div class="property-name">{{ propData.reverseLabel | replace(r/.*:/, "") }}{{ infoLink(propData.url) }}</div>
-            <div class="property-value">
-              {%- if val["target_id"] %}
-                <span{%- if not data.hasLayout %} class="button-left"{% endif %}>
-                  <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
-                    {{ val["target_name"] }}
-                  </a>
-                </span>
-              {%- else %}
-                WARNING SOMETHING WENT WRONG {{ val | dump }} ⬅
-              {%- endif %}
+        {%- endif %}
+        {%- if propData.rev.length > 0 %}
+          <div class="property-name">{{ propData.reverseLabel | replace(r/.*:/, "") }}{{ infoLink(propData.url) }}</div>
+          <div class="property-value">
+            {%- set searchThreshold = config.settings.maxListItemsWithoutSearch if config and config.settings and config.settings.maxListItemsWithoutSearch is not none else 10 %}
+            {%- set isLong = propData.fwd.length + propData.rev.length > searchThreshold %}
+            {%- if isLong %}
+              <input class="border" onkeyup="res = search(this)" />
+              <span class="count">
+                ({{ propData.fwd.length + propData.rev.length }} /
+                {{ propData.fwd.length + propData.rev.length }})</span
+              >
+            {%- endif %}
+            <div class="{{ 'long' if isLong else 'short' }}">
+              {%- for val in propData.rev %}
+                <div>
+                  {%- if val["target_id"] %}
+                    <span{%- if not data.hasLayout %} class="button-left"{% endif %}>
+                      <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
+                        {{ val["target_name"] }}
+                      </a>
+                    </span>
+                  {%- else %}
+                    WARNING SOMETHING WENT WRONG {{ val | dump }} ⬅
+                  {%- endif %}
+                </div>
+              {%- endfor %}
             </div>
           </div>
-        {%- endfor %}
-      {%- endmacro %}
+        {%- endif %}
+      </div>
+    {%- endmacro %}
 
     <!-- Renders the type navigation dropdown -->
     {%- macro typeNav() %}
