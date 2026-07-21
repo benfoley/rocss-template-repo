@@ -59,7 +59,7 @@
       },
       {
         "uri": "http://pcdm.org/models#memberOf",
-        "label": "Member of",
+        "label": "Member of collection",
         "columnWidth": "medium"
       },
       {
@@ -81,7 +81,7 @@
       },
       {
         "uri": "http://pcdm.org/models#hasMember",
-        "label": "Members",
+        "label": "Collection members",
         "columnWidth": "medium"
       },
       {
@@ -173,8 +173,8 @@
     },
     "http://pcdm.org/models#hasMember": {
       "defaultLabel": "hasMember",
-      "customLabel": "Has member",
-      "customReverseLabel": "Member of",
+      "customLabel": "Collection members",
+      "customReverseLabel": "Member of collection",
       "hide": false
     },
      "http://schema.org/hasPart": {
@@ -191,8 +191,8 @@
     },
     "http://pcdm.org/models#memberOf": {
       "defaultLabel": "memberOf",
-      "customLabel": "Member of",
-      "customReverseLabel": "Has member",
+      "customLabel": "Member of collection",
+      "customReverseLabel": "Collection members",
       "hide": false
     },
     "http://purl.org/dc/terms/conformsTo": {

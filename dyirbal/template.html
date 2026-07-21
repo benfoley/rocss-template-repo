@@ -466,79 +466,51 @@
     {%- endmacro %}
 
     <!-- Renders a property for display -->
-    {%- macro displayProp(prop, propData) %}
-      <div class="property-row">
-        {%- if propData.fwd.length > 0 %}
-          <div class="property-name">{{ diplayLabel(propData) }}</div>
-          <div class="property-value">
-            {%- set searchThreshold = config.settings.maxListItemsWithoutSearch if config and config.settings and config.settings.maxListItemsWithoutSearch is not none else 10 %}
-            {%- set isLong = propData.fwd.length + propData.rev.length > searchThreshold %}
-            {%- if isLong %}
-              <input class="border" onkeyup="res = search(this)" />
-              <span class="count">
-                ({{ propData.fwd.length + propData.rev.length }} /
-                {{ propData.fwd.length + propData.rev.length }})</span
-              >
-            {%- endif %}
-            <div class="{{ 'long' if isLong else 'short' }}">
-              {%- for val in propData.fwd %}
-                <div>
-                  {%- if val is string %}
-                    {{ val | urlize | replace(r/,(\s+)/, ",&nbsp;") | nl2br | safe }}
-                  {%- elif val["url"] %}
-                    <a href="{{ val["url"] }}"> {{ val["url"] }}</a>
-                  {%- else %}
-                    {%- if val["target_id"] %}
-                      <span{%- if not data.hasLayout %} class="button-right"{% endif %}>
-                        <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
-                          {{ val["target_name"] }}
-                        </a>
-                      </span>
-                    {%- elif val.value is string %}
-                      {{ val.value | urlize | replace(r/,(\s+)/, ",&nbsp;") | nl2br | safe }}
-                    {%- elif val.value %}
-                      {{ val.value }}
-                    {%- else %}
-                      WARNING SOMETHING WENT WRONG {{ val | dump }}
-                    {%- endif %}
-                  {%- endif %}
-                  
-                </div>
-              {%- endfor %}
+      {%- macro displayProp(prop, propData) %}
+        {%- for val in propData.fwd %}
+          <div class="property-row">
+            <div class="property-name">{{ diplayLabel(propData) }}</div>
+            <div class="property-value">
+              {%- if val is string %}
+                {{ val | urlize | replace(r/,(\s+)/, ",&nbsp;") | nl2br | safe }}
+              {%- elif val["url"] %}
+                <a href="{{ val["url"] }}"> {{ val["url"] }}</a>
+              {%- else %}
+                {%- if val["target_id"] %}
+                  <span{%- if not data.hasLayout %} class="button-right"{% endif %}>
+                    <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
+                      {{ val["target_name"] }}
+                    </a>
+                  </span>
+                {%- elif val.value is string %}
+                  {{ val.value | urlize | replace(r/,(\s+)/, ",&nbsp;") | nl2br | safe }}
+                {%- elif val.value %}
+                  {{ val.value }}
+                {%- else %}
+                  WARNING SOMETHING WENT WRONG {{ val | dump }}
+                {%- endif %}
+              {%- endif %}
             </div>
           </div>
-        {%- endif %}
-        {%- if propData.rev.length > 0 %}
-          <div class="property-name">{{ propData.reverseLabel | replace(r/.*:/, "") }}{{ infoLink(propData.url) }}</div>
-          <div class="property-value">
-            {%- set searchThreshold = config.settings.maxListItemsWithoutSearch if config and config.settings and config.settings.maxListItemsWithoutSearch is not none else 10 %}
-            {%- set isLong = propData.fwd.length + propData.rev.length > searchThreshold %}
-            {%- if isLong %}
-              <input class="border" onkeyup="res = search(this)" />
-              <span class="count">
-                ({{ propData.fwd.length + propData.rev.length }} /
-                {{ propData.fwd.length + propData.rev.length }})</span
-              >
-            {%- endif %}
-            <div class="{{ 'long' if isLong else 'short' }}">
-              {%- for val in propData.rev %}
-                <div>
-                  {%- if val["target_id"] %}
-                    <span{%- if not data.hasLayout %} class="button-left"{% endif %}>
-                      <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
-                        {{ val["target_name"] }}
-                      </a>
-                    </span>
-                  {%- else %}
-                    WARNING SOMETHING WENT WRONG {{ val | dump }} ⬅
-                  {%- endif %}
-                </div>
-              {%- endfor %}
+        {%- endfor %}
+
+        {%- for val in propData.rev %}
+          <div class="property-row">
+            <div class="property-name">{{ propData.reverseLabel | replace(r/.*:/, "") }}{{ infoLink(propData.url) }}</div>
+            <div class="property-value">
+              {%- if val["target_id"] %}
+                <span{%- if not data.hasLayout %} class="button-left"{% endif %}>
+                  <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
+                    {{ val["target_name"] }}
+                  </a>
+                </span>
+              {%- else %}
+                WARNING SOMETHING WENT WRONG {{ val | dump }} ⬅
+              {%- endif %}
             </div>
           </div>
-        {%- endif %}
-      </div>
-    {%- endmacro %}
+        {%- endfor %}
+      {%- endmacro %}
 
     <!-- Renders the type navigation dropdown -->
     {%- macro typeNav() %}
@@ -993,97 +965,51 @@
           {%- endif %}
 
           {%- if not (item == data.ids[data.entryPoint] and class == "root" and data.tabular and data.tabular.hideRootSummary) %}
-            <div class="property-grid">
-              {%- set seenProps = {"@id": true,"@type": true} %}
-              {%- set propertyGroups = config.propertyGroups if config and config.propertyGroups else [] %}
-              {%- for group in propertyGroups %}
-                {%- set hasContent = false %}
-                {%- for input in group.inputs %}
-                  {%- if item.props[input] %}
-                    {%- set hasContent = true %}
-                    {%- set seenProps = seenProps | setProp(input) %}
-                  {%- endif %}
-                {%- endfor %}
-                {%- if hasContent %}
-                  <div class="property-header-row">{{ group.name }}</div>
-                {%- endif %}
-                {%- for input in group.inputs %}
-                  {%- if item.props[input] %}
-                    {{ displayProp(input, item.props[input]) }}
-                  {%- endif %}
-                {%- endfor %}
+            <!-- Renders a property for display -->
+            {%- macro displayProp(prop, propData) %}
+              {%- for val in propData.fwd %}
+                <div class="property-row">
+                  <div class="property-name">{{ diplayLabel(propData) }}</div>
+                  <div class="property-value">
+                    {%- if val is string %}
+                      {{ val | urlize | replace(r/,(
+        \s+)/, ",&nbsp;") | nl2br | safe }}
+                    {%- elif val["url"] %}
+                      <a href="{{ val["url"] }}"> {{ val["url"] }}</a>
+                    {%- else %}
+                      {%- if val["target_id"] %}
+                        <span{%- if not data.hasLayout %} class="button-right"{% endif %}>
+                          <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
+                            {{ val["target_name"] }}
+                          </a>
+                        </span>
+                      {%- elif val.value is string %}
+                        {{ val.value | urlize | replace(r/,(
+        \s+)/, ",&nbsp;") | nl2br | safe }}
+                      {%- elif val.value %}
+                        {{ val.value }}
+                      {%- else %}
+                        WARNING SOMETHING WENT WRONG {{ val | dump }}
+                      {%- endif %}
+                    {%- endif %}
+                  </div>
+                </div>
               {%- endfor %}
 
-              {%- set hasContent = false %}
-              {%- for input, val in item.props %}
-                {%- if not seenProps[input] %}
-                  {%- set hasContent = true %}
-                {%- endif %}
+              {%- for val in propData.rev %}
+                <div class="property-row">
+                  <div class="property-name">{{ propData.reverseLabel | replace(r/.*:/, "") }}{{ infoLink(propData.url) }}</div>
+                  <div class="property-value">
+                    {%- if val["target_id"] %}
+                      <span{%- if not data.hasLayout %} class="button-left"{% endif %}>
+                        <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
+                          {{ val["target_name"] }}
+                        </a>
+                      </span>
+                    {%- else %}
+                      WARNING SOMETHING WENT WRONG {{ val | dump }} ⬅
+                    {%- endif %}
+                  </div>
+                </div>
               {%- endfor %}
-
-              {%- if hasContent %}
-                <div class="property-header-row">Other properties</div>
-              {%- endif %}
-
-              {%- for input, val in item.props %}
-                {%- if not seenProps[input] %}
-                  {{ displayProp(input, item.props[input]) }}
-                {%- endif %}
-              {%- endfor %}
-            </div>
-          {%- endif %}
-        </div> <!-- end of entity-content-row-->
-        {%- if class == "entity" %}</div>{%- endif %}
-      </div>
-    
-    {%- endmacro %}
-
-    {{ display(data.ids[data.entryPoint], "root") }}
-
-    {%- if data.tabular and data.tabular.hideRootSummary %}
-      {{ display(data.ids[data.entryPoint], "entity", "root_entity_overlay", data.entryPoint) }}
-    {%- endif %}
-
-    {%- for id, entity in data.ids %}
-      {%- if id != data.entryPoint %}
-        {{ display(entity, "entity") }}
-      {%- endif %}
-    {%- endfor %}
-    </main>
-    
-    <div id="footerModal" class="modal" hidden>
-      <div class="modal-content">
-        <button id="footerModalClose" type="button">&times;</button>
-        <div id="footerModalBody"></div>
-      </div>
-    </div>
-    
-    {%- if config.footer %}
-    <footer class="site-footer">
-      <div class="footer-left">
-        {{ config.footer.text }}
-      </div>
-    
-      <div class="footer-right">
-        {%- if config.footer.links %}
-        <ul class="footer-links">
-          {% for link in config.footer.links %}
-          <li>
-            {% if link.modalText %}
-            <a href="#" class="footer-modal-link" data-modal-text="{{ link.modalText }}">
-              {{ link.label }}
-            </a>
-            {% else %}
-            <a href="{{ link.url }}" {% if link.external %}target="_blank" rel="noopener" {% endif %}>
-              {{ link.label }}
-            </a>
-            {% endif %}
-          </li>
-          {% endfor %}
-        </ul>
-        {%- endif %}
-      </div>
-    </footer>
-    {%- endif %}
-  </body>
-</html>
+            {%- endmacro %}
