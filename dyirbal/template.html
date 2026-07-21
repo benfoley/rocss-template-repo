@@ -239,6 +239,7 @@
         var searchText = input.value.toLowerCase();
         var itemsContainer = container.querySelector(".table-cell-values");
         var items = itemsContainer.querySelectorAll(".table-cell-item");
+        var totalCount = items.length;
         var visibleCount = 0;
         
         items.forEach(function(item) {
@@ -259,6 +260,33 @@
         if (countSpan) {
           countSpan.textContent = visibleCount;
         }
+
+        var totalSpan = container.querySelector(".table-cell-total");
+        if (totalSpan) {
+          totalSpan.textContent = totalCount;
+        }
+      }
+
+      function initializeTableCellCounts() {
+        document.querySelectorAll(".table-cell-long").forEach(function (container) {
+          var itemsContainer = container.querySelector(".table-cell-values");
+          if (!itemsContainer) {
+            return;
+          }
+
+          var items = itemsContainer.querySelectorAll(".table-cell-item");
+          var totalCount = items.length;
+
+          var visibleSpan = container.querySelector(".table-cell-visible");
+          if (visibleSpan) {
+            visibleSpan.textContent = totalCount;
+          }
+
+          var totalSpan = container.querySelector(".table-cell-total");
+          if (totalSpan) {
+            totalSpan.textContent = totalCount;
+          }
+        });
       }
 
       function search(input) {
@@ -388,6 +416,7 @@
         });
 
         resetTabularFilters();
+        initializeTableCellCounts();
 
         // Close summary overlay when clicking outside the panel, matching close-button behavior.
         document.querySelectorAll(".entity").forEach(function (overlay) {
@@ -616,25 +645,27 @@
             <div class="table-cell-controls">
               <input type="text" class="table-cell-search" placeholder="Find..." onkeyup="filterTableCell(this)" />
               <span class="table-cell-count">
-                <span class="table-cell-visible">{{ cell.items | length }}</span> / {{ cell.items | length }}
+                <span class="table-cell-visible">{{ cell.items | length }}</span> / <span class="table-cell-total">{{ cell.items | length }}</span>
               </span>
             </div>
           {%- endif %}
           <div class="table-cell-values">
             {%- for item in cell.items %}
-              {%- if item.target_id and item.text %}
-                <div class="table-cell-item" data-text="{{ item.text | lower }}">
-                  {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
-                  <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
-                    <a href="#{{ item.target_id | urlencode }}">
-                      {{ item.text }}
-                    </a>
-                  </span>
-                </div>
-              {%- elif item.text %}
-                <div class="table-cell-item" data-text="{{ item.text | lower }}">
-                  {{ item.text }}
-                </div>
+              {%- if not item.isReverse %}
+                {%- if item.target_id and item.text %}
+                  <div class="table-cell-item" data-text="{{ item.text | lower }}">
+                    {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
+                    <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
+                      <a href="#{{ item.target_id | urlencode }}">
+                        {{ item.text }}
+                      </a>
+                    </span>
+                  </div>
+                {%- elif item.text %}
+                  <div class="table-cell-item" data-text="{{ item.text | lower }}">
+                    {{ item.text }}
+                  </div>
+                {%- endif %}
               {%- endif %}
             {%- endfor %}
           </div>
@@ -642,20 +673,22 @@
       {%- elif cell is iterable and cell is not string and cell is not mapping %}
         {# Array of 2 values - stacked lines #}
         {%- for item in cell %}
-          <div class="table-cell-inline-item">
-            {%- if item.target_id and item.text %}
-              {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
-              <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
-                <a href="#{{ item.target_id | urlencode }}">
-                  {{ item.text }}
-                </a>
-              </span>
-            {%- elif item.text %}
-              {{ item.text }}
-            {%- endif %}
-          </div>
+          {%- if not item.isReverse %}
+            <div class="table-cell-inline-item">
+              {%- if item.target_id and item.text %}
+                {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
+                <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
+                  <a href="#{{ item.target_id | urlencode }}">
+                    {{ item.text }}
+                  </a>
+                </span>
+              {%- elif item.text %}
+                {{ item.text }}
+              {%- endif %}
+            </div>
+          {%- endif %}
         {%- endfor %}
-      {%- elif cell is mapping and cell.target_id and cell.text %}
+      {%- elif cell is mapping and cell.target_id and cell.text and not cell.isReverse %}
         {%- set buttonClass = "button-left" if cell.isReverse else "button-right" %}
         <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
           <a href="#{{ cell.target_id | urlencode }}">

@@ -11,6 +11,55 @@
     "template": "template.html"
   },
   "navigationByType": {
+    "http://pcdm.org/models#Collection": [
+      {
+        "uri": "http://schema.org/name",
+        "label": "Collection",
+        "columnWidth": "large"
+      },
+      {
+        "uri": "http://schema.org/description",
+        "label": "Description",
+        "columnWidth": "medium"
+      },
+      {
+        "uri": "http://pcdm.org/models#hasMember",
+        "label": "Members",
+        "columnWidth": "medium"
+      },
+      {
+        "uri": "http://schema.org/about",
+        "label": "Subjects",
+        "columnWidth": "medium",
+        "facetLabel": "Subject"
+      }
+    ],
+    "http://pcdm.org/models#Object": [
+      {
+        "uri": "http://schema.org/name",
+        "label": "Object"
+      },
+      {
+        "uri": "http://schema.org/hasPart",
+        "label": "Contains",
+        "columnWidth": "medium"
+      }
+    ],
+    "http://schema.org/Language": [
+      {
+        "uri": "http://schema.org/name",
+        "label": "Language"
+      },
+      {
+        "uri": "arcp://name,custom/terms#austlangCode",
+        "label": "Austlang Code"
+      },
+      {
+        "uri": "https://w3id.org/ldac/terms#subjectLanguage",
+        "label": "Things with this Language",
+        "columnWidth": "large"
+      }
+    ],
     "http://schema.org/MediaObject": [
       {
         "uri": "http://schema.org/name",
@@ -46,51 +95,6 @@
         "addFacet": true
       }
     ],
-    "http://pcdm.org/models#Object": [
-      {
-        "uri": "http://schema.org/name",
-        "label": "Object",
-        "columnWidth": "large"
-      },
-      {
-        "uri": "http://schema.org/description",
-        "label": "Description",
-        "columnWidth": "medium"
-      },
-      {
-        "uri": "http://pcdm.org/models#memberOf",
-        "label": "Member of",
-        "columnWidth": "medium"
-      },
-      {
-        "uri": "http://schema.org/license",
-        "label": "License",
-        "columnWidth": "medium"
-      }
-    ],
-    "http://pcdm.org/models#Collection": [
-      {
-        "uri": "http://schema.org/name",
-        "label": "Collection",
-        "columnWidth": "large"
-      },
-      {
-        "uri": "http://schema.org/description",
-        "label": "Description",
-        "columnWidth": "medium"
-      },
-      {
-        "uri": "http://pcdm.org/models#hasMember",
-        "label": "Members",
-        "columnWidth": "medium"
-      },
-      {
-        "uri": "http://schema.org/about",
-        "label": "Subjects",
-        "columnWidth": "medium",
-        "facetLabel": "Subject"
-      }
-    ],
     "http://schema.org/Person": [
       {
         "uri": "http://schema.org/name",
@@ -118,21 +122,6 @@
         "uri": "http://schema.org/holdingArchive",
         "label": "Collections Held",
         "columnWidth": "medium"
-      }
-    ],
-    "http://schema.org/Language": [
-      {
-        "uri": "http://schema.org/name",
-        "label": "Language"
-      },
-      {
-        "uri": "arcp://name,custom/terms#austlangCode",
-        "label": "Austlang Code"
-      },
-      {
-        "uri": "https://w3id.org/ldac/terms#subjectLanguage",
-        "label": "Things with this Language",
-        "columnWidth": "large"
       }
     ]
   },
