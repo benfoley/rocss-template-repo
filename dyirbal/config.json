@@ -58,6 +58,11 @@
         "columnWidth": "medium"
       },
       {
+        "uri": "http://pcdm.org/models#memberOf",
+        "label": "Member of",
+        "columnWidth": "medium"
+      },
+      {
         "uri": "http://schema.org/license",
         "label": "License",
         "columnWidth": "medium"
@@ -72,6 +77,11 @@
       {
         "uri": "http://schema.org/description",
         "label": "Description",
+        "columnWidth": "medium"
+      },
+      {
+        "uri": "http://pcdm.org/models#hasMember",
+        "label": "Members",
         "columnWidth": "medium"
       },
       {
@@ -165,13 +175,13 @@
       "defaultLabel": "hasMember",
       "customLabel": "Has member",
       "customReverseLabel": "Member of",
-      "hide": true
+      "hide": false
     },
      "http://schema.org/hasPart": {
       "defaultLabel": "hasPart",
       "customLabel": "Has resources",
       "customReverseLabel": "Part of",
-      "hide": true
+      "hide": false
     },
      "http://schema.org/isPartOf": {
       "defaultLabel": "isPartOf",
@@ -183,7 +193,7 @@
       "defaultLabel": "memberOf",
       "customLabel": "Member of",
       "customReverseLabel": "Has member",
-      "hide": true
+      "hide": false
     },
     "http://purl.org/dc/terms/conformsTo": {
       "defaultLabel": "conformsTo",
