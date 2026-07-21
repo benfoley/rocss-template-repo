@@ -1017,9 +1017,12 @@
 
     {{ display(data.ids[data.entryPoint], "root") }}
 
-    {%- if data.tabular and data.tabular.hideRootSummary %}
-      {{ display(data.ids[data.entryPoint], "entity", "root_entity_overlay", data.entryPoint) }}
-    {%- endif %}
+    {{ display(data.ids[data.entryPoint], "entity", "root_entity_overlay", data.entryPoint) }}
+    {%- for id, entity in data.ids %}
+      {%- if id != data.entryPoint %}
+        {{ display(entity, "entity", id, data.entryPoint) }}
+      {%- endif %}
+    {%- endfor %}
   </main>
   </body>
 </html>
