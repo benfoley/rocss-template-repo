@@ -58,11 +58,6 @@
         "columnWidth": "medium"
       },
       {
-        "uri": "http://pcdm.org/models#memberOf",
-        "label": "Member of collection",
-        "columnWidth": "medium"
-      },
-      {
         "uri": "http://schema.org/license",
         "label": "License",
         "columnWidth": "medium"
@@ -187,12 +182,6 @@
       "defaultLabel": "isPartOf",
       "customLabel": "Is in",
       "customReverseLabel": "Has these resources",
-      "hide": false
-    },
-    "http://pcdm.org/models#memberOf": {
-      "defaultLabel": "memberOf",
-      "customLabel": "Member of collection",
-      "customReverseLabel": "Collection members",
       "hide": false
     },
     "http://purl.org/dc/terms/conformsTo": {

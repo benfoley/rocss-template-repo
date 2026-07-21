@@ -455,9 +455,8 @@
           {%- else -%}
              <span class="info"><a href="{{ url }}" title="Look up definition for {{ url }}" target="_blank">ⓘ</a></span>
           {%- endif %}
-       
-      {%- endif %}
-    {%- endmacro %}
+        {%- endif %}
+        {%- endmacro %}
 
     <!-- Renders the display label for a property -->
     {%- macro diplayLabel(propData) %}
@@ -1013,3 +1012,14 @@
                 </div>
               {%- endfor %}
             {%- endmacro %}
+          {%- endif %}
+        {%- endmacro %}
+
+    {{ display(data.ids[data.entryPoint], "root") }}
+
+    {%- if data.tabular and data.tabular.hideRootSummary %}
+      {{ display(data.ids[data.entryPoint], "entity", "root_entity_overlay", data.entryPoint) }}
+    {%- endif %}
+  </main>
+  </body>
+</html>
