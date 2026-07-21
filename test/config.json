@@ -1,6 +1,6 @@
 {
   "multipage": false,
-  "style": "",
+  "style": "style.css",
   "settings": {
     "maxListItemsWithoutSearch": 20,
     "showInfoLinks": false,
