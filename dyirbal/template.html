@@ -468,8 +468,6 @@
   <body>
     <main>
 
-      TEMPLATE TEST ONLINE
-
     <!-- Renders an info link for a given URL if info links are enabled in the configuration -->
     {%- macro infoLink(url) %}
       {%- set showInfoLinks = config.settings.showInfoLinks if config and config.settings and config.settings.showInfoLinks is not none else true %}
