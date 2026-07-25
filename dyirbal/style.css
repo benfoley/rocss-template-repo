@@ -826,6 +826,11 @@ iframe {
   color: black;
 }
 
+.table-view-controls select:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+
 .tabular-table {
   border-top: none;
 }

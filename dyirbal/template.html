@@ -459,7 +459,7 @@
 
         // Handle type switching (show/hide pre-rendered tables)
         if (select) {
-          select.addEventListener("change", function () {
+          var updateTabularTypeSelection = function () {
             // Hide all tables
             document.querySelectorAll(".tabular-table-wrap").forEach(function (wrap) {
               wrap.classList.remove("tabular-table-active");
@@ -488,7 +488,12 @@
             refreshAllFilterDropdowns();
             applyTabularFilters();
             updateRowAlternation();
-          });
+          };
+
+          // Use both events so keyboard selection updates immediately across browsers.
+          select.addEventListener("change", updateTabularTypeSelection);
+          select.addEventListener("input", updateTabularTypeSelection);
+
           // Show the initial selected type
           var initialTable = document.querySelector(".tabular-table-wrap[data-type='" + select.value + "']");
           if (initialTable) {
