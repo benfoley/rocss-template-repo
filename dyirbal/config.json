@@ -45,25 +45,10 @@
         "columnWidth": "medium"
       }
     ],
-    "http://schema.org/Language": [
-      {
-        "uri": "http://schema.org/name",
-        "label": "Language"
-      },
-      {
-        "uri": "arcp://name,custom/terms#austlangCode",
-        "label": "Austlang Code"
-      },
-      {
-        "uri": "https://w3id.org/ldac/terms#subjectLanguage",
-        "label": "Things with this Language",
-        "columnWidth": "large"
-      }
-    ],
     "http://schema.org/MediaObject": [
       {
         "uri": "http://schema.org/name",
-        "label": "File",
+        "label": "Item",
         "columnWidth": "large"
       },
       {
@@ -87,12 +72,27 @@
         "uri": "http://schema.org/isPartOf",
         "label": "Part Of",
         "addFacet": true,
-        "facetLabel": "Group"
+        "facetLabel": "Series"
       },
       {
         "uri": "https://w3id.org/ldac/terms#subjectLanguage",
         "label": "Language",
         "addFacet": true
+      }
+    ],
+    "http://schema.org/Language": [
+      {
+        "uri": "http://schema.org/name",
+        "label": "Language"
+      },
+      {
+        "uri": "arcp://name,custom/terms#austlangCode",
+        "label": "Austlang Code"
+      },
+      {
+        "uri": "https://w3id.org/ldac/terms#subjectLanguage",
+        "label": "Things with this Language",
+        "columnWidth": "large"
       }
     ],
     "http://schema.org/Person": [
@@ -156,7 +156,7 @@
     },
     "http://pcdm.org/models#Object": {
       "defaultLabel": "RepositoryObject",
-      "customLabel": "Group",
+      "customLabel": "Series",
       "customReverseLabel": "",
       "hide": false
     },
@@ -336,7 +336,7 @@
     },
     "http://schema.org/MediaObject": {
       "defaultLabel": "MediaObject",
-      "customLabel": "File",
+      "customLabel": "Item",
       "customReverseLabel": "",
       "hide": false
     },
