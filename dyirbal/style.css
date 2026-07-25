@@ -90,7 +90,8 @@ entity
 .entity-header-row {
   width: 100%;
   box-sizing: border-box;
-  padding: 8px 80px 10px 40px;
+  padding: 14px 80px 14px 40px;
+  min-height: 3.5rem;
   background-color: var(--surface-header);
   color: white;
   text-align: left;
@@ -340,10 +341,11 @@ span.info a {
 
 .entity-close {
   position: absolute;
-  top: 12px;
+  top: 50%;
   right: 16px;
   color: white;
   text-decoration: none;
+  transform: translateY(-50%);
 
   display: inline-flex;
   align-items: center;
@@ -356,12 +358,12 @@ span.info a {
 .entity-close-text {
   /*font-size: 15px;*/
   font-weight: 500;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .entity-close-icon {
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .entity-close:hover {
@@ -383,14 +385,13 @@ span.info a {
 .root-description {
   display: none;
 }
-
-.root-more-link {
-  display: none;
+.entity-panel.simple-about .entity-content-row {
+  margin: 2em auto;
+  width: 60%;
 }
 
-.root-more-link a {
-  color: var(--link-color);
-  text-decoration-color: var(--link-dot-color);
+.entity-panel.simple-about .root-description {
+  display: block;
 }
 
 .home-link {

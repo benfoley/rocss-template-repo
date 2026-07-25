@@ -5,7 +5,8 @@
     "maxListItemsWithoutSearch": 20,
     "showInfoLinks": false,
     "tabular": true,
-    "showRootOnStartup": false
+    "showRootOnStartup": true,
+    "showSimpleAbout": true
   },
   "root": {
     "template": "template.html"

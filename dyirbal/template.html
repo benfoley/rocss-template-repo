@@ -773,7 +773,7 @@
         {%- else %}
           {{ typeNav() }}
         {%- endif %}
-{%- endmacro %}
+    {%- endmacro %}
 
     <!-- Renders a table cell based on its type and content -->
     {%- macro renderTableCell(cell, isNameColumn, row) %}
@@ -1027,13 +1027,24 @@
       <!-- Modal -->
       {%- set effectiveAnchorId = anchorId if anchorId else item.id %}
       {%- set effectiveCloseTargetId = closeTargetId if closeTargetId else data.entryPoint %}
+      {%- set showSimpleAbout = config.settings.showSimpleAbout if config and config.settings and config.settings.showSimpleAbout is not none else false %}
+      {%- set isRootOverlay = item == data.ids[data.entryPoint] and class == "entity" and effectiveAnchorId == "root_entity_overlay" %}
+      {%- set useSimpleAbout = showSimpleAbout and isRootOverlay %}
       {%- set entityTypeClass = "entity-type-" + (item.type[0] | replace(r/.*[:#\/]/, "") | lower) if item.type else "" %}
       {%- set encodingFormat = item.props["http://schema.org/encodingFormat"].fwd[0].value if item.props["http://schema.org/encodingFormat"] else "" %}
       {%- set formatClass = "format-" + (encodingFormat | replace(r/.*[\/]/, "") | lower | replace(r/[^a-z0-9\-]/, "-")) if encodingFormat else "" %}
       {%- set displayClass = "entity-display-adjacent" if ("pdf" in (encodingFormat | lower) or "jpeg" in (encodingFormat | lower)) else "entity-display-stacked" %}
+      {%- set rootName = item.id %}
+      {%- if item.props and "http://schema.org/name" in item.props and item.props["http://schema.org/name"].fwd %}
+        {%- set rootName = item.props["http://schema.org/name"].fwd[0].value %}
+      {%- endif %}
+      {%- set rootDescription = "" %}
+      {%- if item.props and "http://schema.org/description" in item.props and item.props["http://schema.org/description"].fwd and item.props["http://schema.org/description"].fwd.length > 0 %}
+        {%- set rootDescription = item.props["http://schema.org/description"].fwd[0].value if item.props["http://schema.org/description"].fwd[0].value else item.props["http://schema.org/description"].fwd[0] %}
+      {%- endif %}
 
       <div id="{{ effectiveAnchorId | urlencode }}" class="{{ class }}{{ " " + entityTypeClass if entityTypeClass else "" }}{{ " " + formatClass if formatClass else "" }}{{ " " + displayClass }}" data-close-target="{{ effectiveCloseTargetId }}">
-        {%- if class == "entity" %}<div class="entity-panel">{%- endif %}
+        {%- if class == "entity" %}<div class="entity-panel{{ " simple-about" if useSimpleAbout else "" }}">{%- endif %}
   
           <!-- Heading Section -->
         <div class="entity-header-row">
@@ -1045,40 +1056,38 @@
           {%- endif %}
           <div class="entity-header-top">
             <div class="entity-header-home">
-              {%- if class == "entity" %}
+              {%- if class == "entity" and not useSimpleAbout %}
                 {{ root () }}
               {%- endif %}
             </div>
           </div>
-          <div class="entity-header-types">
-            {%- for type in item.type %}
-              <span class="type">{{ showType(type) }}</span
-              >{%- if not loop.last %}<p>|</p>{%- endif %}
-            {%- endfor %}
-          </div>
-          <h2>
-            {%- if item.props and "http://schema.org/name" in item.props and item.props["http://schema.org/name"].fwd %}
-              {{ item.props["http://schema.org/name"].fwd[0].value   }}
-            {% else %}
-              <!-- Use ID if name isn't available, e.g. files -->
-              {{ item.id }}
-            {%- endif %}
-          </h2>
-          {%- if item == data.ids[data.entryPoint] and class == "root" and item.props and "http://schema.org/description" in item.props and item.props["http://schema.org/description"].fwd and item.props["http://schema.org/description"].fwd.length > 0 %}
-            {%- set rootDescription = item.props["http://schema.org/description"].fwd[0].value if item.props["http://schema.org/description"].fwd[0].value else item.props["http://schema.org/description"].fwd[0] %}
-            {%- if rootDescription %}
+          {%- if not useSimpleAbout %}
+            <div class="entity-header-types">
+              {%- for type in item.type %}
+                <span class="type">{{ showType(type) }}</span
+                >{%- if not loop.last %}<p>|</p>{%- endif %}
+              {%- endfor %}
+            </div>
+            <h2>
+              {%- if item.props and "http://schema.org/name" in item.props and item.props["http://schema.org/name"].fwd %}
+                {{ item.props["http://schema.org/name"].fwd[0].value   }}
+              {% else %}
+                <!-- Use ID if name isn't available, e.g. files -->
+                {{ item.id }}
+              {%- endif %}
+            </h2>
+            {%- if item == data.ids[data.entryPoint] and class == "root" and rootDescription %}
               <p class="root-description">  {{ rootDescription | nl2br | safe }}</p>
             {%- endif %}
-            <p class="root-more-link"><a href="#root_entity_overlay">More about this collection</a></p>
-          {%- endif %}
-          {%- if not (item == data.ids[data.entryPoint]) %}
-            <h2 class="id">{{ item.id }}</h2>
-          {%- endif %}
-          {%- if item == data.ids[data.entryPoint] and class == "root" %}
+            {%- if not (item == data.ids[data.entryPoint]) %}
+              <h2 class="id">{{ item.id }}</h2>
+            {%- endif %}
+            {%- if item == data.ids[data.entryPoint] and class == "root" %}
+            {%- endif %}
           {%- endif %}
         </div>
 
-        {%- if item == data.ids[data.entryPoint] and class == "root" %}
+        {%- if not useSimpleAbout and item == data.ids[data.entryPoint] and class == "root" %}
           <section class="browse">
             {%- if data.tabular and data.tabular.enabled %}
               {{ tabularSummary() }}
@@ -1121,9 +1130,17 @@
         {%- endif %}
 
         <div class="entity-content-row">
+          {%- if useSimpleAbout %}
+            <div class="property-grid">
+              <h2>{{ rootName }}</h2>
+              {%- if rootDescription %}
+                <p class="root-description">{{ rootDescription | nl2br | safe }}</p>
+              {%- endif %}
+            </div>
+          {%- endif %}
 
           <!--Section for files if they are avails-->
-          {%- if item.type.includes("File") %}
+          {%- if not useSimpleAbout and item.type.includes("File") %}
 
             {%- set htmlRegex = r/(\.txt)$|(\.html?)$/i %}
             {%- set mdRegex = r/\.md$/i %}
@@ -1177,7 +1194,7 @@
             </div>
           {%- endif %}
 
-          {%- if not (item == data.ids[data.entryPoint] and class == "root" and data.tabular and data.tabular.hideRootSummary) %}
+          {%- if not useSimpleAbout and not (item == data.ids[data.entryPoint] and class == "root" and data.tabular and data.tabular.hideRootSummary) %}
             <div class="property-grid">
               {%- set seenProps = {"@id": true,"@type": true} %}
               {%- set propertyGroups = config.propertyGroups if config and config.propertyGroups else [] %}
