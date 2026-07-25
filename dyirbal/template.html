@@ -624,10 +624,12 @@
         {%- set normalizedUrl = url | replace(r/^#/, "") %}
         {%- set linkTarget = data.infoLinks[url] or data.infoLinks[normalizedUrl] %}
         
-        {%- if linkTarget %}
-            <span class="info"><a href="#{{ linkTarget | urlencode }}" title="See definition for {{ url }} in this RO-Crate">ⓘ</a></span>
+          {%- if linkTarget %}
+              {%- set resolvedLinkTarget = "root_entity_overlay" if linkTarget == data.entryPoint and data.tabular and data.tabular.hideRootSummary else linkTarget %}
+            <span class="info"><a href="#{{ resolvedLinkTarget | urlencode }}" title="See definition for {{ url }} in this RO-Crate">ⓘ</a></span>
           {%- elif url[0] == "#" -%}
-             <span class="info"><a href="#{{ normalizedUrl | urlencode }}" title="See definition for {{ normalizedUrl }} in this RO-Crate">ⓘ</a></span>
+               {%- set resolvedNormalizedTarget = "root_entity_overlay" if normalizedUrl == data.entryPoint and data.tabular and data.tabular.hideRootSummary else normalizedUrl %}
+             <span class="info"><a href="#{{ resolvedNormalizedTarget | urlencode }}" title="See definition for {{ normalizedUrl }} in this RO-Crate">ⓘ</a></span>
           {%- else -%}
              <span class="info"><a href="{{ url }}" title="Look up definition for {{ url }}" target="_blank">ⓘ</a></span>
           {%- endif %}
@@ -665,8 +667,9 @@
                     <a href="{{ val["url"] }}"> {{ val["url"] }}</a>
                   {%- else %}
                     {%- if val["target_id"] %}
+                      {%- set resolvedTargetId = "root_entity_overlay" if val["target_id"] == data.entryPoint and data.tabular and data.tabular.hideRootSummary else val["target_id"] %}
                       <span{%- if not data.hasLayout %} class="button-right"{% endif %}>
-                        <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
+                        <a href="#{{ resolvedTargetId | urlencode }}" title="{{ val["target_name"] }}">
                           {{ val["target_name"] }}
                         </a>
                       </span>
@@ -700,8 +703,9 @@
               {%- for val in propData.rev %}
                 <div>
                   {%- if val["target_id"] %}
+                    {%- set resolvedTargetId = "root_entity_overlay" if val["target_id"] == data.entryPoint and data.tabular and data.tabular.hideRootSummary else val["target_id"] %}
                     <span{%- if not data.hasLayout %} class="button-left"{% endif %}>
-                      <a href="#{{ val["target_id"] | urlencode }}" title="{{ val["target_name"] }}">
+                      <a href="#{{ resolvedTargetId | urlencode }}" title="{{ val["target_name"] }}">
                         {{ val["target_name"] }}
                       </a>
                     </span>
@@ -799,10 +803,11 @@
           <div class="table-cell-values">
             {%- for item in cell.items %}
               {%- if item.target_id and item.text %}
+                {%- set resolvedTargetId = "root_entity_overlay" if item.target_id == data.entryPoint and data.tabular and data.tabular.hideRootSummary else item.target_id %}
                 <div class="table-cell-item" data-text="{{ item.text | lower }}">
                   {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
                   <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
-                    <a href="#{{ item.target_id | urlencode }}">
+                    <a href="#{{ resolvedTargetId | urlencode }}">
                       {{ item.text }}
                     </a>
                   </span>
@@ -820,9 +825,10 @@
         {%- for item in cell %}
           <div class="table-cell-inline-item">
             {%- if item.target_id and item.text %}
+              {%- set resolvedTargetId = "root_entity_overlay" if item.target_id == data.entryPoint and data.tabular and data.tabular.hideRootSummary else item.target_id %}
               {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
               <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
-                <a href="#{{ item.target_id | urlencode }}">
+                <a href="#{{ resolvedTargetId | urlencode }}">
                   {{ item.text }}
                 </a>
               </span>
@@ -832,13 +838,14 @@
           </div>
         {%- endfor %}
       {%- elif cell is mapping and cell.target_id and cell.text %}
+        {%- set resolvedCellTargetId = "root_entity_overlay" if cell.target_id == data.entryPoint and data.tabular and data.tabular.hideRootSummary else cell.target_id %}
         {%- set buttonClass = "button-left" if cell.isReverse else "button-right" %}
         <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
-          <a href="#{{ cell.target_id | urlencode }}">
+          <a href="#{{ resolvedCellTargetId | urlencode }}">
             {{ cell.text }}
           </a>
         </span>
-      {%- elif isNameColumn and row.pagePath %}
+      {%- elif isNameColumn and row.pagePath and config and config.multipage %}
         <a href="{{ row.pagePath }}">
           {% if cell and cell.text %}
             {{ cell.text }}
@@ -847,7 +854,8 @@
           {%- endif %}
         </a>
       {%- elif isNameColumn and row.id %}
-        <a href="#{{ row.id | urlencode }}">
+        {%- set resolvedRowTargetId = "root_entity_overlay" if row.id == data.entryPoint and data.tabular and data.tabular.hideRootSummary else row.id %}
+        <a href="#{{ resolvedRowTargetId | urlencode }}">
           {% if cell and cell.text %}
             {{ cell.text }}
           {% else %}
