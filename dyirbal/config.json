@@ -24,20 +24,19 @@
       },
       {
         "uri": "http://pcdm.org/models#hasMember",
-        "label": "Members",
+        "label": "Contains",
         "columnWidth": "medium"
-      },
-      {
-        "uri": "http://schema.org/about",
-        "label": "Subjects",
-        "columnWidth": "medium",
-        "facetLabel": "Subject"
       }
     ],
     "http://pcdm.org/models#Object": [
       {
         "uri": "http://schema.org/name",
-        "label": "Object"
+        "label": "Series"
+      },
+      {
+        "uri": "http://schema.org/description",
+        "label": "Description",
+        "columnWidth": "medium"
       },
       {
         "uri": "http://schema.org/hasPart",
@@ -60,24 +59,31 @@
         "uri": "http://schema.org/encodingFormat",
         "label": "Format",
         "addFacet": true,
-        "facetLabel": "Format"
+        "facetLabel": "format"
       },
       {
         "uri": "arcp://name,custom/terms#participant",
-        "label": "Participant",
+        "label": "Author",
         "addFacet": true,
-        "facetLabel": "Participant"
+        "facetLabel": "author"
+      },
+      {
+        "uri": "arcp://name,custom/terms#contentPerson",
+        "label": "Person in",
+        "addFacet": true,
+        "facetLabel": "person mentioned"
       },
       {
         "uri": "http://schema.org/isPartOf",
-        "label": "Part Of",
+        "label": "In series",
         "addFacet": true,
-        "facetLabel": "Series"
+        "facetLabel": "series"
       },
       {
         "uri": "https://w3id.org/ldac/terms#subjectLanguage",
         "label": "Language",
-        "addFacet": true
+        "addFacet": true,
+        "facetLabel": "language"
       }
     ],
     "http://schema.org/Language": [
