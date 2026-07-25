@@ -198,6 +198,27 @@
         return (value || "").toLowerCase().trim();
       }
 
+      function ensureGroupHasSelection(groupCheckboxes) {
+        if (!groupCheckboxes || !groupCheckboxes.length) {
+          return;
+        }
+
+        var anyChecked = groupCheckboxes.some(function (candidate) {
+          return candidate.checked;
+        });
+        if (anyChecked) {
+          return;
+        }
+
+        var allCheckbox = groupCheckboxes.find(function (candidate) {
+          return (candidate.dataset.filterValue || "") === "";
+        });
+        if (allCheckbox) {
+          allCheckbox.checked = true;
+          allCheckbox.classList.add("is-active");
+        }
+      }
+
       function refreshFilterDropdownUi(dropdown) {
         if (!dropdown || !dropdown._refreshFilterUi) {
           return;
@@ -283,6 +304,7 @@
 
             checkbox.checked = false;
             checkbox.classList.remove("is-active");
+            ensureGroupHasSelection(checkboxes);
             applyTabularFilters();
             renderChips();
             syncVisibleItems();
@@ -519,6 +541,8 @@
                 }
               });
             }
+
+            ensureGroupHasSelection(groupCheckboxes);
 
             this.classList.toggle("is-active", this.checked);
             applyTabularFilters();

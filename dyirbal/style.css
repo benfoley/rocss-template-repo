@@ -995,6 +995,7 @@ main {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+  padding: 6px;
 }
 
 .tabular-filter-chip {
