@@ -56,7 +56,7 @@
         "columnWidth": "large"
       },
       {
-        "uri": "http://schema.org/encodingFormat",
+        "uri": "http://purl.org/dc/terms#format",
         "label": "Format",
         "addFacet": true,
         "facetLabel": "format"
