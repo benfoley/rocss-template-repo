@@ -947,42 +947,64 @@ main {
   flex: 0;
 }
 
-.tabular-filter-group {
+.tabular-filter-reset {
+  display: block;
+  margin-bottom: 12px;
+  padding: 8px 16px;
+  background: rgba(63, 100, 77, 0.1);
+  border: 1px solid #3F644D;
+  border-radius: 4px;
+  color: #3F644D;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color .2s ease;
+}
+
+.tabular-filter-reset:hover {
+  background: rgba(63, 100, 77, 0.15);
+}
+
+.tabular-filter-dropdown {
   border-top: 1px dotted #3f644d;
   padding-top: 15px;
+  padding-bottom: 15px;
+  margin-bottom: 8px;
 }
 
-.tabular-filter-label {
+.tabular-filter-dropdown summary {
   font-weight: bold;
   color: #3F644D;
-  margin-right: 8px;
-}
-
-.tabular-filter-chips {
-  padding-top: 10px;
-  padding-bottom: 15px;
-  text-align: center;
-}
-
-.tabular-filter-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 9999px;
-  background: rgba(63, 100, 77, 0.04);
-  color: #3F644D;
-  line-height: 1.1;
   cursor: pointer;
-  transition: background-color .2s ease, color .2s ease;
+  user-select: none;
+  padding: 8px 0;
 }
 
-.tabular-filter-chip:hover {
-  background: rgba(63, 100, 77, 0.08);
+.tabular-filter-dropdown summary:hover {
+  text-decoration: underline;
 }
 
-.tabular-filter-chip.is-active {
-  background: #3F644D;
-  color: #fff;
+.tabular-filter-list {
+  padding-top: 10px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tabular-filter-item {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+}
+
+.tabular-filter-checkbox {
+  margin-right: 8px;
+  cursor: pointer;
+  accent-color: #3F644D;
+}
+
+.tabular-filter-item span {
+  color: #3F644D;
 }

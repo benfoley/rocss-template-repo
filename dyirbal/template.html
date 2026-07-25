@@ -116,10 +116,10 @@
           return;
         }
 
-        var activeFilterChips = Array.from(activeTableWrap.querySelectorAll(".tabular-filter-chip.is-active"));
-        var activeFilters = activeFilterChips.reduce(function (acc, chip) {
-          var filterKey = chip.dataset.filterKey || "";
-          var filterValue = (chip.dataset.filterValue || "").toLowerCase();
+        var activeFilterChips = Array.from(activeTableWrap.querySelectorAll(".tabular-filter-checkbox.is-active"));
+        var activeFilters = activeFilterChips.reduce(function (acc, checkbox) {
+          var filterKey = checkbox.dataset.filterKey || "";
+          var filterValue = (checkbox.dataset.filterValue || "").toLowerCase();
           if (!filterKey || !filterValue) {
             return acc;
           }
@@ -195,24 +195,10 @@
       }
 
       function resetTabularFilters() {
-        document.querySelectorAll(".tabular-filter-chip").forEach(function (chip) {
-          var isDefault = (chip.dataset.filterValue || "") === "";
-          chip.classList.toggle("is-active", isDefault);
-          chip.setAttribute("aria-pressed", isDefault ? "true" : "false");
-        });
-      }
-
-      function selectTabularFilterChip(filterKey, filterValue) {
-        if (!filterKey) {
-          return;
-        }
-
-        var normalizedValue = (filterValue || "").toLowerCase();
-        document.querySelectorAll('.tabular-filter-chip[data-filter-key="' + filterKey + '"]').forEach(function (chip) {
-          var chipValue = (chip.dataset.filterValue || "").toLowerCase();
-          var isActive = normalizedValue ? chipValue === normalizedValue : chipValue === "";
-          chip.classList.toggle("is-active", isActive);
-          chip.setAttribute("aria-pressed", isActive ? "true" : "false");
+        document.querySelectorAll(".tabular-filter-checkbox").forEach(function (checkbox) {
+          var isDefault = (checkbox.dataset.filterValue || "") === "";
+          checkbox.checked = isDefault;
+          checkbox.classList.toggle("is-active", isDefault);
         });
       }
 
@@ -400,19 +386,16 @@
           input.addEventListener("input", applyTabularFilters);
         });
 
-        document.querySelectorAll(".tabular-filter-chip").forEach(function (chip) {
-          chip.addEventListener("click", function () {
-            var filterKey = this.dataset.filterKey || "";
-            var filterValue = this.dataset.filterValue || "";
-
-            if (!filterValue || this.classList.contains("is-active")) {
-              resetTabularFilters();
-            } else {
-              selectTabularFilterChip(filterKey, filterValue);
-            }
-
+        document.querySelectorAll(".tabular-filter-checkbox").forEach(function (checkbox) {
+          checkbox.addEventListener("change", function () {
+            this.classList.toggle("is-active", this.checked);
             applyTabularFilters();
           });
+        });
+
+        document.getElementById("resetFiltersBtn").addEventListener("click", function () {
+          resetTabularFilters();
+          applyTabularFilters();
         });
 
         resetTabularFilters();
@@ -740,23 +723,25 @@
       <div class="tabular-table-wrap" data-type="{{ typeName }}">
         {%- if typeData.filters and typeData.filters.length %}
         <div class="tabular-filters">
+          <button type="button" class="tabular-filter-reset" id="resetFiltersBtn">Reset filters</button>
           {%- for filterGroup in typeData.filters %}
-          <div class="tabular-filter-group" data-filter-key="{{ filterGroup.key }}">
-            <span class="tabular-filter-label">{{ filterGroup.label }}</span>
-            <div class="tabular-filter-chips">
+          <details class="tabular-filter-dropdown" open>
+            <summary class="tabular-filter-label">{{ filterGroup.label }}</summary>
+            <div class="tabular-filter-list">
               {%- for item in filterGroup.items %}
-              <button
-                type="button"
-                class="tabular-filter-chip{{ ' is-active' if item.active else '' }}"
-                data-filter-key="{{ filterGroup.key }}"
-                data-filter-value="{{ item.value }}"
-                aria-pressed="{{ 'true' if item.active else 'false' }}"
-              >
-                {{ item.label }}
-              </button>
+              <label class="tabular-filter-item">
+                <input
+                  type="checkbox"
+                  class="tabular-filter-checkbox{{ ' is-active' if item.active else '' }}"
+                  data-filter-key="{{ filterGroup.key }}"
+                  data-filter-value="{{ item.value }}"
+                  {{ 'checked' if item.active else '' }}
+                />
+                <span>{{ item.label }}</span>
+              </label>
               {%- endfor %}
             </div>
-          </div>
+          </details>
           {%- endfor %}
         </div>
         {%- endif %}
