@@ -89,11 +89,13 @@
     "http://schema.org/Language": [
       {
         "uri": "http://schema.org/name",
-        "label": "Language"
+        "label": "Language",
+        "addFacet": true,
+        "facetLabel": "language"
       },
       {
-        "uri": "arcp://name,custom/terms#austlangCode",
-        "label": "Austlang Code"
+        "// uri": "arcp://name,custom/terms#austlangCode",
+        "// label": "Austlang Code"
       },
       {
         "uri": "https://w3id.org/ldac/terms#subjectLanguage",
@@ -108,14 +110,16 @@
         "columnWidth": "large"
       },
       {
-        "uri": "http://schema.org/accountablePerson",
-        "label": "Involved in Collections",
-        "columnWidth": "medium"
+        "uri": "arcp://name,custom/terms#participant",
+        "label": "Author",
+        "addFacet": true,
+        "facetLabel": "author"
       },
       {
-        "uri": "http://schema.org/author",
-        "label": "Author of Collections",
-        "columnWidth": "medium"
+        "uri": "arcp://name,custom/terms#contentPerson",
+        "label": "Person in",
+        "addFacet": true,
+        "facetLabel": "person mentioned"
       }
     ],
     "http://schema.org/Organization": [

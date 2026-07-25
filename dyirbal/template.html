@@ -769,21 +769,19 @@
           {%- endif %}
           <div class="table-cell-values">
             {%- for item in cell.items %}
-              {%- if not item.isReverse %}
-                {%- if item.target_id and item.text %}
-                  <div class="table-cell-item" data-text="{{ item.text | lower }}">
-                    {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
-                    <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
-                      <a href="#{{ item.target_id | urlencode }}">
-                        {{ item.text }}
-                      </a>
-                    </span>
-                  </div>
-                {%- elif item.text %}
-                  <div class="table-cell-item" data-text="{{ item.text | lower }}">
-                    {{ item.text }}
-                  </div>
-                {%- endif %}
+              {%- if item.target_id and item.text %}
+                <div class="table-cell-item" data-text="{{ item.text | lower }}">
+                  {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
+                  <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
+                    <a href="#{{ item.target_id | urlencode }}">
+                      {{ item.text }}
+                    </a>
+                  </span>
+                </div>
+              {%- elif item.text %}
+                <div class="table-cell-item" data-text="{{ item.text | lower }}">
+                  {{ item.text }}
+                </div>
               {%- endif %}
             {%- endfor %}
           </div>
@@ -791,22 +789,20 @@
       {%- elif cell is iterable and cell is not string and cell is not mapping %}
         {# Array of 2 values - stacked lines #}
         {%- for item in cell %}
-          {%- if not item.isReverse %}
-            <div class="table-cell-inline-item">
-              {%- if item.target_id and item.text %}
-                {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
-                <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
-                  <a href="#{{ item.target_id | urlencode }}">
-                    {{ item.text }}
-                  </a>
-                </span>
-              {%- elif item.text %}
-                {{ item.text }}
-              {%- endif %}
-            </div>
-          {%- endif %}
+          <div class="table-cell-inline-item">
+            {%- if item.target_id and item.text %}
+              {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
+              <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
+                <a href="#{{ item.target_id | urlencode }}">
+                  {{ item.text }}
+                </a>
+              </span>
+            {%- elif item.text %}
+              {{ item.text }}
+            {%- endif %}
+          </div>
         {%- endfor %}
-      {%- elif cell is mapping and cell.target_id and cell.text and not cell.isReverse %}
+      {%- elif cell is mapping and cell.target_id and cell.text %}
         {%- set buttonClass = "button-left" if cell.isReverse else "button-right" %}
         <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
           <a href="#{{ cell.target_id | urlencode }}">
