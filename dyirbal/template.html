@@ -194,12 +194,118 @@
         return "filter" + key.charAt(0).toUpperCase() + key.slice(1);
       }
 
+      function normalizeFilterText(value) {
+        return (value || "").toLowerCase().trim();
+      }
+
+      function refreshFilterDropdownUi(dropdown) {
+        if (!dropdown || !dropdown._refreshFilterUi) {
+          return;
+        }
+        dropdown._refreshFilterUi();
+      }
+
+      function refreshAllFilterDropdowns() {
+        document.querySelectorAll(".tabular-filter-dropdown").forEach(function (dropdown) {
+          refreshFilterDropdownUi(dropdown);
+        });
+      }
+
+      function initializeFilterDropdownUis() {
+        document.querySelectorAll(".tabular-filter-dropdown").forEach(function (dropdown) {
+          var searchInput = dropdown.querySelector(".tabular-filter-search-input");
+          var chipsContainer = dropdown.querySelector(".tabular-filter-chips");
+          var checkboxes = Array.from(dropdown.querySelectorAll(".tabular-filter-checkbox"));
+          var filterItems = Array.from(dropdown.querySelectorAll(".tabular-filter-item"));
+
+          if (!searchInput || !chipsContainer || !checkboxes.length || !filterItems.length) {
+            return;
+          }
+
+          function syncVisibleItems() {
+            var query = normalizeFilterText(searchInput.value);
+            filterItems.forEach(function (item) {
+              var label = normalizeFilterText(item.dataset.filterLabel || item.textContent);
+              var isChecked = !!item.querySelector(".tabular-filter-checkbox:checked");
+              var matches = !query || label.indexOf(query) > -1;
+              item.style.display = matches || isChecked ? "" : "none";
+            });
+          }
+
+          function renderChips() {
+            chipsContainer.innerHTML = "";
+
+            checkboxes.forEach(function (checkbox) {
+              var value = checkbox.dataset.filterValue || "";
+              if (!checkbox.checked || value === "") {
+                return;
+              }
+
+              var labelNode = checkbox.closest("label")
+                ? checkbox.closest("label").querySelector("span")
+                : null;
+              var chipLabel = labelNode ? labelNode.textContent.trim() : value;
+
+              var chip = document.createElement("button");
+              chip.type = "button";
+              chip.className = "tabular-filter-chip";
+              chip.dataset.filterValue = value;
+              chip.setAttribute("aria-label", "Remove filter " + chipLabel);
+
+              var chipText = document.createElement("span");
+              chipText.textContent = chipLabel;
+              chip.appendChild(chipText);
+
+              var chipClose = document.createElement("span");
+              chipClose.setAttribute("aria-hidden", "true");
+              chipClose.textContent = "×";
+              chip.appendChild(chipClose);
+
+              chipsContainer.appendChild(chip);
+            });
+
+            chipsContainer.style.display = chipsContainer.children.length ? "flex" : "none";
+          }
+
+          chipsContainer.addEventListener("click", function (event) {
+            var chip = event.target.closest(".tabular-filter-chip");
+            if (!chip) {
+              return;
+            }
+
+            var chipValue = chip.dataset.filterValue || "";
+            var checkbox = checkboxes.find(function (candidate) {
+              return (candidate.dataset.filterValue || "") === chipValue;
+            });
+            if (!checkbox) {
+              return;
+            }
+
+            checkbox.checked = false;
+            checkbox.classList.remove("is-active");
+            applyTabularFilters();
+            renderChips();
+            syncVisibleItems();
+          });
+
+          searchInput.addEventListener("input", syncVisibleItems);
+
+          dropdown._refreshFilterUi = function () {
+            renderChips();
+            syncVisibleItems();
+          };
+
+          dropdown._refreshFilterUi();
+        });
+      }
+
       function resetTabularFilters() {
         document.querySelectorAll(".tabular-filter-checkbox").forEach(function (checkbox) {
           var isDefault = (checkbox.dataset.filterValue || "") === "";
           checkbox.checked = isDefault;
           checkbox.classList.toggle("is-active", isDefault);
         });
+        refreshAllFilterDropdowns();
       }
 
       function updateTabularCount() {
@@ -357,6 +463,8 @@
               searchInput.value = "";
             }
             resetTabularFilters();
+            refreshAllFilterDropdowns();
+            applyTabularFilters();
             updateRowAlternation();
           });
           // Show the initial selected type
@@ -388,18 +496,47 @@
 
         document.querySelectorAll(".tabular-filter-checkbox").forEach(function (checkbox) {
           checkbox.addEventListener("change", function () {
+            var filterList = this.closest(".tabular-filter-list");
+            var groupCheckboxes = filterList
+              ? Array.from(filterList.querySelectorAll(".tabular-filter-checkbox"))
+              : [this];
+            var thisValue = this.dataset.filterValue || "";
+
+            if (this.checked && thisValue !== "") {
+              groupCheckboxes.forEach(function (candidate) {
+                if ((candidate.dataset.filterValue || "") === "") {
+                  candidate.checked = false;
+                  candidate.classList.remove("is-active");
+                }
+              });
+            }
+
+            if (this.checked && thisValue === "") {
+              groupCheckboxes.forEach(function (candidate) {
+                if (candidate !== checkbox) {
+                  candidate.checked = false;
+                  candidate.classList.remove("is-active");
+                }
+              });
+            }
+
             this.classList.toggle("is-active", this.checked);
+            applyTabularFilters();
+            refreshFilterDropdownUi(this.closest(".tabular-filter-dropdown"));
+          });
+        });
+
+        document.querySelectorAll(".tabular-filter-reset").forEach(function (button) {
+          button.addEventListener("click", function () {
+            resetTabularFilters();
             applyTabularFilters();
           });
         });
 
-        document.getElementById("resetFiltersBtn").addEventListener("click", function () {
-          resetTabularFilters();
-          applyTabularFilters();
-        });
-
+        initializeFilterDropdownUis();
         resetTabularFilters();
         initializeTableCellCounts();
+        applyTabularFilters();
 
         // Close summary overlay when clicking outside the panel, matching close-button behavior.
         document.querySelectorAll(".entity").forEach(function (overlay) {
@@ -720,16 +857,28 @@
       {# Table last #}
       {%- for typeName, typeData in data.tabular.types %}
       {%- set nameUri = "http://schema.org/name" %}
+      {%- set typeLoopIndex = loop.index0 %}
       <div class="tabular-table-wrap" data-type="{{ typeName }}">
         {%- if typeData.filters and typeData.filters.length %}
         <div class="tabular-filters">
-          <button type="button" class="tabular-filter-reset" id="resetFiltersBtn">Reset filters</button>
+          <button type="button" class="tabular-filter-reset">Reset filters</button>
           {%- for filterGroup in typeData.filters %}
+          {%- set enableFilterSearch = filterGroup.items.length > 5 %}
           <details class="tabular-filter-dropdown" open>
             <summary class="tabular-filter-label">{{ filterGroup.label }}</summary>
+            {%- if enableFilterSearch %}
+            <div class="tabular-filter-search-wrap">
+              <div class="tabular-filter-chips" aria-live="polite"></div>
+              <input
+                type="text"
+                class="tabular-filter-search-input"
+                placeholder="Search {{ filterGroup.label | lower | replace(r/^filter by\s+/, '') }}"
+              />
+            </div>
+            {%- endif %}
             <div class="tabular-filter-list">
               {%- for item in filterGroup.items %}
-              <label class="tabular-filter-item">
+              <label class="tabular-filter-item" data-filter-label="{{ item.label | lower }}">
                 <input
                   type="checkbox"
                   class="tabular-filter-checkbox{{ ' is-active' if item.active else '' }}"
