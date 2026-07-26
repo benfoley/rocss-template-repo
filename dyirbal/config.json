@@ -85,6 +85,12 @@
         "label": "Language",
         "addFacet": true,
         "facetLabel": "language"
+      },
+      {
+        "uri": "http://schema.org/contentLocation",
+        "label": "Location",
+        "addFacet": true,
+        "facetLabel": "location"
       }
     ],
     "http://schema.org/Language": [
@@ -133,6 +139,19 @@
         "uri": "http://schema.org/holdingArchive",
         "label": "Collections Held",
         "columnWidth": "medium"
+      }
+    ],
+    "http://schema.org/Place": [
+      {
+        "uri": "http://schema.org/name",
+        "label": "Place",
+        "addFacet": true,
+        "facetLabel": "place"
+      },
+      {
+        "uri": "http://schema.org/contentLocation",
+        "label": "Files",
+        "columnWidth": "large"
       }
     ]
   },
