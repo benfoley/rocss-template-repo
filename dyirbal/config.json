@@ -60,7 +60,8 @@
         "uri": "http://purl.org/dc/terms#format",
         "label": "Format",
         "addFacet": true,
-        "facetLabel": "format"
+        "facetLabel": "format",
+        "hideInTable": true
       },
       {
         "uri": "arcp://name,custom/terms#participant",
@@ -78,7 +79,8 @@
         "uri": "http://schema.org/isPartOf",
         "label": "In series",
         "addFacet": true,
-        "facetLabel": "series"
+        "facetLabel": "series",
+        "hideInTable": true
       },
       {
         "uri": "https://w3id.org/ldac/terms#subjectLanguage",
