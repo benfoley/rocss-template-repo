@@ -106,7 +106,7 @@
       },
       {
         "uri": "https://w3id.org/ldac/terms#subjectLanguage",
-        "label": "Things with this Language",
+        "label": "Items with this Language",
         "columnWidth": "large"
       }
     ],
