@@ -8,6 +8,33 @@
     </title>
     <style>
 {{ css | safe }}
+
+      .file-space-time-map {
+        margin-bottom: 1.2rem;
+        padding: 0.65rem;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 0.5rem;
+        background: #fff;
+      }
+
+      .file-space-time-map-title {
+        font-size: 0.86rem;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+      }
+
+      .file-space-time-map-canvas {
+        width: 100%;
+        height: 180px;
+        border-radius: 0.4rem;
+        overflow: hidden;
+      }
+
+      .file-space-time-map-status {
+        margin-top: 0.45rem;
+        font-size: 0.8rem;
+        color: #4f5b66;
+      }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -733,6 +760,88 @@
         footerMap.invalidateSize();
       }
 
+      function pointsForFileEntity(entityId) {
+        if (!entityId || !roCrateMapData || !roCrateMapData.ids || !roCrateMapData.ids[entityId]) {
+          return [];
+        }
+        var coords = resolveCoordinatesFromEntity(entityId, roCrateMapData.ids, new Set(), 0, "");
+        return dedupeCoordinates(coords);
+      }
+
+      function ensureFileSpaceTimeMaps(scopeEl) {
+        if (typeof L === "undefined") {
+          return;
+        }
+
+        var scope = scopeEl || document;
+        scope.querySelectorAll(".file-space-time-map[data-entity-id]").forEach(function (container) {
+          var entityId = container.getAttribute("data-entity-id") || "";
+          var mapCanvas = container.querySelector(".file-space-time-map-canvas");
+          var statusEl = container.querySelector(".file-space-time-map-status");
+          if (!entityId || !mapCanvas || !statusEl) {
+            return;
+          }
+
+          var points = pointsForFileEntity(entityId);
+          if (!points.length) {
+            container.hidden = true;
+            return;
+          }
+
+          container.hidden = false;
+          statusEl.textContent = "Showing " + points.length + " location" + (points.length === 1 ? "" : "s") + ".";
+
+          if (container._leafletMap) {
+            setTimeout(function () {
+              container._leafletMap.invalidateSize();
+            }, 0);
+            return;
+          }
+
+          var entity = roCrateMapData.ids[entityId];
+          var name = entityName(entity, entityId);
+          var map = L.map(mapCanvas, {
+            zoomControl: true,
+            minZoom: 2,
+            scrollWheelZoom: false
+          });
+
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors"
+          }).addTo(map);
+
+          var group = L.featureGroup();
+          points.forEach(function (point) {
+            var marker = L.marker([point.lat, point.lon]);
+            var placeHtml = point.placeName
+              ? "<span><strong>Place:</strong> " + escapeHtml(point.placeName) + "</span><br/>"
+              : "";
+            marker.bindPopup(
+              "<strong>" + escapeHtml(name) + "</strong><br/>" +
+              placeHtml +
+              "<span><strong>Lat/Lon:</strong> " + point.lat.toFixed(5) + ", " + point.lon.toFixed(5) + "</span>"
+            );
+            marker.addTo(group);
+          });
+
+          group.addTo(map);
+          map.fitBounds(group.getBounds(), { padding: [16, 16], maxZoom: 14 });
+          map.invalidateSize();
+          container._leafletMap = map;
+        });
+      }
+
+      function refreshActiveFileSpaceTimeMap() {
+        var activeHash = window.location.hash ? window.location.hash.slice(1) : "";
+        var activePanel = activeHash ? document.getElementById(activeHash) : null;
+        if (activePanel) {
+          ensureFileSpaceTimeMaps(activePanel);
+          return;
+        }
+        ensureFileSpaceTimeMaps(document);
+      }
+
       function setMapMainActive(active) {
         mapMainActive = !!active;
         document.body.classList.toggle("map-main-active", mapMainActive);
@@ -931,6 +1040,11 @@
         if (window.location.hash === "#map_view") {
           setMapMainActive(true);
         }
+
+        refreshActiveFileSpaceTimeMap();
+        window.addEventListener("hashchange", function () {
+          setTimeout(refreshActiveFileSpaceTimeMap, 0);
+        });
       });
 
       // Handle footer modal functionality
@@ -1578,6 +1692,14 @@
                     {{ displayProp(input, item.props[input]) }}
                   {%- endif %}
                 {%- endfor %}
+
+                {%- if group.name == "Space & Time" and item.type.includes("File") %}
+                  <div class="file-space-time-map" data-entity-id="{{ item.id }}" hidden>
+                    <div class="file-space-time-map-title">Location map</div>
+                    <div class="file-space-time-map-canvas" aria-label="Map of locations for this file"></div>
+                    <div class="file-space-time-map-status">Preparing map...</div>
+                  </div>
+                {%- endif %}
               {%- endfor %}
 
               {%- set hasContent = false %}
