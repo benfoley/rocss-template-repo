@@ -9,6 +9,8 @@
     <style>
 {{ css | safe }}
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
       function escapeRegExp(text) {
@@ -425,6 +427,325 @@
           `${found - 1} /  ${count - 1}`;
       }
 
+      var hideRootSummaryForMap = {{ 'true' if data.tabular and data.tabular.hideRootSummary else 'false' }};
+      var roCrateMapData = {
+        entryPoint: {{ data.entryPoint | dump | safe }},
+        ids: {{ data.ids | dump | safe }}
+      };
+
+      var footerMap = null;
+      var footerMapPoints = null;
+      var footerMapMarkerLayer = null;
+      var mapMainActive = false;
+      var mapRootTarget = {{ ("root_entity_overlay" if data.tabular and data.tabular.hideRootSummary else data.entryPoint) | dump | safe }};
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function getPropForwardValues(entity, uri) {
+        if (!entity || !entity.props || !entity.props[uri] || !entity.props[uri].fwd) {
+          return [];
+        }
+        return entity.props[uri].fwd;
+      }
+
+      function firstStringValue(entity, uris) {
+        for (var i = 0; i < uris.length; i++) {
+          var values = getPropForwardValues(entity, uris[i]);
+          for (var j = 0; j < values.length; j++) {
+            var raw = values[j] && values[j].value;
+            if (typeof raw === "string" && raw.trim()) {
+              return raw.trim();
+            }
+          }
+        }
+        return "";
+      }
+
+      function firstNumberValue(entity, uris) {
+        for (var i = 0; i < uris.length; i++) {
+          var values = getPropForwardValues(entity, uris[i]);
+          for (var j = 0; j < values.length; j++) {
+            var raw = values[j] && values[j].value;
+            if (typeof raw === "number" && Number.isFinite(raw)) {
+              return raw;
+            }
+            if (typeof raw === "string" && raw.trim()) {
+              var parsed = Number(raw.trim());
+              if (Number.isFinite(parsed)) {
+                return parsed;
+              }
+            }
+          }
+        }
+        return null;
+      }
+
+      function isPlaceEntity(entity) {
+        if (!entity || !Array.isArray(entity.type)) {
+          return false;
+        }
+        return entity.type.some(function (typeName) {
+          return typeName === "Place" || /[#\/]Place$/.test(typeName);
+        });
+      }
+
+      function placeNameForEntity(entity, fallback) {
+        if (!entity) {
+          return fallback || "";
+        }
+        return firstStringValue(entity, ["http://schema.org/name", "https://schema.org/name"]) || fallback || "";
+      }
+
+      function parseWktPoint(wkt) {
+        if (typeof wkt !== "string") {
+          return null;
+        }
+        var match = wkt.match(/POINT\s*\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)/i);
+        if (!match) {
+          return null;
+        }
+        var lon = Number(match[1]);
+        var lat = Number(match[2]);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          return null;
+        }
+        return { lat: lat, lon: lon };
+      }
+
+      function extractDirectCoordinates(entity, inheritedPlaceName) {
+        var placeName = inheritedPlaceName || "";
+        if (!placeName && isPlaceEntity(entity)) {
+          placeName = placeNameForEntity(entity, "");
+        }
+
+        var latitudeUris = [
+          "http://schema.org/latitude",
+          "https://schema.org/latitude",
+          "http://schema.org/.latitude"
+        ];
+        var longitudeUris = [
+          "http://schema.org/longitude",
+          "https://schema.org/longitude",
+          "http://schema.org/.longitude"
+        ];
+        var lat = firstNumberValue(entity, latitudeUris);
+        var lon = firstNumberValue(entity, longitudeUris);
+
+        if (lat !== null && lon !== null) {
+          return [{ lat: lat, lon: lon, placeName: placeName }];
+        }
+
+        var wktUris = [
+          "http://www.opengis.net/ont/geosparql#asWKT",
+          "https://www.opengis.net/ont/geosparql#asWKT",
+          "http://schema.org/asWKT"
+        ];
+        for (var i = 0; i < wktUris.length; i++) {
+          var values = getPropForwardValues(entity, wktUris[i]);
+          for (var j = 0; j < values.length; j++) {
+            var coord = parseWktPoint(values[j] && values[j].value);
+            if (coord) {
+              return [{ lat: coord.lat, lon: coord.lon, placeName: placeName }];
+            }
+          }
+        }
+
+        return [];
+      }
+
+      function resolveCoordinatesFromEntity(entityId, ids, visited, depth, inheritedPlaceName) {
+        if (!entityId || !ids || !ids[entityId] || depth > 4) {
+          return [];
+        }
+        if (visited.has(entityId)) {
+          return [];
+        }
+        visited.add(entityId);
+
+        var entity = ids[entityId];
+        var placeName = inheritedPlaceName || "";
+        if (!placeName && isPlaceEntity(entity)) {
+          placeName = placeNameForEntity(entity, "");
+        }
+
+        var direct = extractDirectCoordinates(entity, placeName);
+        if (direct.length) {
+          return direct;
+        }
+
+        var relationUris = [
+          "http://schema.org/geo",
+          "https://schema.org/geo",
+          "http://schema.org/contentLocation",
+          "https://schema.org/contentLocation",
+          "http://schema.org/spatialCoverage",
+          "https://schema.org/spatialCoverage",
+          "http://schema.org/locationCreated",
+          "https://schema.org/locationCreated"
+        ];
+
+        var found = [];
+        relationUris.forEach(function (uri) {
+          getPropForwardValues(entity, uri).forEach(function (value) {
+            if (!value || !value.target_id) {
+              return;
+            }
+            var nextPlaceName = placeName;
+            var targetEntity = ids[value.target_id];
+            if (!nextPlaceName && targetEntity && isPlaceEntity(targetEntity)) {
+              nextPlaceName = placeNameForEntity(targetEntity, "");
+            }
+
+            var coords = resolveCoordinatesFromEntity(value.target_id, ids, visited, depth + 1, nextPlaceName);
+            coords.forEach(function (coord) {
+              found.push(coord);
+            });
+          });
+        });
+
+        return found;
+      }
+
+      function dedupeCoordinates(coords) {
+        var seen = new Set();
+        var unique = [];
+        coords.forEach(function (coord) {
+          var key = coord.lat.toFixed(6) + "," + coord.lon.toFixed(6) + "," + (coord.placeName || "").toLowerCase();
+          if (seen.has(key)) {
+            return;
+          }
+          seen.add(key);
+          unique.push(coord);
+        });
+        return unique;
+      }
+
+      function entityName(entity, fallbackId) {
+        var name = firstStringValue(entity, ["http://schema.org/name", "https://schema.org/name"]);
+        return name || fallbackId || "Unnamed file";
+      }
+
+      function mapTargetForEntity(entityId) {
+        if (hideRootSummaryForMap && entityId === roCrateMapData.entryPoint) {
+          return "root_entity_overlay";
+        }
+        return entityId;
+      }
+
+      function buildFooterMapPoints() {
+        if (!roCrateMapData || !roCrateMapData.ids) {
+          return [];
+        }
+
+        var points = [];
+        Object.keys(roCrateMapData.ids).forEach(function (entityId) {
+          var entity = roCrateMapData.ids[entityId];
+          if (!entity || !Array.isArray(entity.type) || !entity.type.includes("File")) {
+            return;
+          }
+
+          var coords = resolveCoordinatesFromEntity(entityId, roCrateMapData.ids, new Set(), 0, "");
+          var uniqueCoords = dedupeCoordinates(coords);
+          if (!uniqueCoords.length) {
+            return;
+          }
+
+          var name = entityName(entity, entityId);
+          uniqueCoords.forEach(function (coord) {
+            points.push({
+              id: entityId,
+              name: name,
+              lat: coord.lat,
+              lon: coord.lon,
+              placeName: coord.placeName || "",
+              target: mapTargetForEntity(entityId)
+            });
+          });
+        });
+
+        return points;
+      }
+
+      function ensureFooterMapReady() {
+        var mapEl = document.getElementById("mainMapCanvas");
+        var statusEl = document.getElementById("footerMapStatus");
+        if (!mapEl || !statusEl || typeof L === "undefined") {
+          return;
+        }
+
+        if (!footerMapPoints) {
+          footerMapPoints = buildFooterMapPoints();
+        }
+
+        if (!footerMap) {
+          footerMap = L.map(mapEl, {
+            zoomControl: true,
+            minZoom: 2
+          });
+
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors"
+          }).addTo(footerMap);
+        }
+
+        if (!footerMapPoints.length) {
+          if (footerMapMarkerLayer) {
+            footerMap.removeLayer(footerMapMarkerLayer);
+            footerMapMarkerLayer = null;
+          }
+          statusEl.textContent = "No file entities with coordinates were found in this RO-Crate.";
+          footerMap.setView([0, 0], 2);
+          footerMap.invalidateSize();
+          return;
+        }
+
+        statusEl.textContent = "Showing " + footerMapPoints.length + " file location" + (footerMapPoints.length === 1 ? "" : "s") + ".";
+
+        if (footerMapMarkerLayer) {
+          footerMap.removeLayer(footerMapMarkerLayer);
+        }
+
+        var group = L.featureGroup();
+        footerMapPoints.forEach(function (point) {
+          var marker = L.marker([point.lat, point.lon]);
+          var placeHtml = point.placeName
+            ? "<span><strong>Place:</strong> " + escapeHtml(point.placeName) + "</span><br/>"
+            : "";
+          var popupHtml =
+            "<strong>" + escapeHtml(point.name) + "</strong><br/>" +
+            placeHtml +
+            "<a href=\"#" + encodeURIComponent(point.target) + "\">Open file entity</a>";
+          marker.bindPopup(popupHtml);
+          marker.addTo(group);
+        });
+
+        footerMapMarkerLayer = group;
+        footerMapMarkerLayer.addTo(footerMap);
+        footerMap.fitBounds(footerMapMarkerLayer.getBounds(), { padding: [24, 24], maxZoom: 14 });
+        footerMap.invalidateSize();
+      }
+
+      function setMapMainActive(active) {
+        mapMainActive = !!active;
+        document.body.classList.toggle("map-main-active", mapMainActive);
+        if (mapMainActive) {
+          ensureFooterMapReady();
+          if (footerMap) {
+            setTimeout(function () {
+              footerMap.invalidateSize();
+            }, 0);
+          }
+        }
+      }
+
       {%- set showRootOnStartup = config.settings.showRootOnStartup if config and config.settings and config.settings.showRootOnStartup is not none else true %}
       var showRootOnStartup = {{ 'true' if showRootOnStartup else 'false' }};
 
@@ -580,6 +901,36 @@
             window.location.hash = "#" + encodeURIComponent(closeTarget);
           });
         });
+
+        document.querySelectorAll(".footer-links a").forEach(function (link) {
+          var href = link.getAttribute("href") || "";
+          if (href === "#map_view") {
+            link.addEventListener("click", function (event) {
+              event.preventDefault();
+              setMapMainActive(true);
+              window.location.hash = "#map_view";
+            });
+            return;
+          }
+
+          if (href.startsWith("#")) {
+            link.addEventListener("click", function () {
+              setMapMainActive(false);
+            });
+          }
+        });
+
+        var mapBackButton = document.getElementById("mapViewBack");
+        if (mapBackButton) {
+          mapBackButton.addEventListener("click", function () {
+            setMapMainActive(false);
+            window.location.hash = "#" + encodeURIComponent(mapRootTarget);
+          });
+        }
+
+        if (window.location.hash === "#map_view") {
+          setMapMainActive(true);
+        }
       });
 
       // Handle footer modal functionality
@@ -1264,6 +1615,15 @@
         {{ display(entity, "entity") }}
       {%- endif %}
     {%- endfor %}
+
+    <section id="map_view" class="main-map-view" aria-label="Map showing files with coordinates">
+      <div class="map-view-head">
+        <h2>File Map</h2>
+        <button id="mapViewBack" type="button" class="map-view-back">Back to Browse</button>
+      </div>
+      <p id="footerMapStatus" class="map-status">Loading map data...</p>
+      <div id="mainMapCanvas" class="main-map-canvas"></div>
+    </section>
     </main>
     
     <div id="footerModal" class="modal" hidden>

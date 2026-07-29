@@ -163,6 +163,10 @@
         "url": "#root_entity_overlay"
       },
       {
+        "label": "Map",
+        "url": "#map_view"
+      },
+      {
         "label": "Contact",
         "url": "mailto:"
       }
