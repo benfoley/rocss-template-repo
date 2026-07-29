@@ -1,5 +1,12 @@
 Just somewhere to try linking to templates for ROCSS.
 
+## hideInTable
+
+`hideInTable` is supported on `navigationByType` column entries in `config.json`.
+
+- Set `hideInTable: true` to hide that property from table columns for that type.
+- Keep `addFacet: true` if you still want it available as a filter.
+
 ## Tabular Column Visibility (navigationByType)
 
 In `config.json`, each column entry under `navigationByType` can include:
