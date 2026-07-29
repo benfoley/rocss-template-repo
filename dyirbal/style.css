@@ -26,6 +26,7 @@ body {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  overflow-x: hidden;
 }
 
 h3 {
@@ -837,6 +838,17 @@ iframe {
 
 main {
   flex: 1;
+  padding-top: calc(5.75rem + env(safe-area-inset-top));
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+}
+
+.root > .entity-header-row {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  box-shadow: 0 6px 18px rgba(17, 17, 17, 0.12);
 }
 
 /* Footer styles */
@@ -849,8 +861,14 @@ main {
   padding: 20px;
   padding-left: 40px;
   padding-right: 40px;
-  margin-top: 40px;
+  margin-top: 0;
   background-color: #3f644d;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  box-shadow: 0 -6px 18px rgba(17, 17, 17, 0.12);
 }
 
 .footer-left {
