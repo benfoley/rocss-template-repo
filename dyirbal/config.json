@@ -86,13 +86,15 @@
         "uri": "https://w3id.org/ldac/terms#subjectLanguage",
         "label": "Language",
         "addFacet": true,
-        "facetLabel": "language"
+        "facetLabel": "language",
+        "hideInTable": true
       },
       {
         "uri": "http://schema.org/contentLocation",
         "label": "Location",
         "addFacet": true,
-        "facetLabel": "location"
+        "facetLabel": "location",
+        "hideInTable": true
       }
     ],
     "http://schema.org/Language": [
