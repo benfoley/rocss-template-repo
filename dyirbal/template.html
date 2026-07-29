@@ -1268,7 +1268,10 @@
           <div class="table-cell-values">
             {%- for item in cell.items %}
               {%- if item.target_id and item.text %}
-                {%- set resolvedTargetId = "root_entity_overlay" if item.target_id == data.entryPoint and data.tabular and data.tabular.hideRootSummary else item.target_id %}
+                {%- set resolvedTargetId = item.target_id %}
+                {%- if item.target_id == data.entryPoint and data.tabular and data.tabular.hideRootSummary %}
+                  {%- set resolvedTargetId = "root_entity_overlay_collection" if isNameColumn else "root_entity_overlay" %}
+                {%- endif %}
                 <div class="table-cell-item" data-text="{{ item.text | lower }}">
                   {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
                   <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
@@ -1290,7 +1293,10 @@
         {%- for item in cell %}
           <div class="table-cell-inline-item">
             {%- if item.target_id and item.text %}
-              {%- set resolvedTargetId = "root_entity_overlay" if item.target_id == data.entryPoint and data.tabular and data.tabular.hideRootSummary else item.target_id %}
+              {%- set resolvedTargetId = item.target_id %}
+              {%- if item.target_id == data.entryPoint and data.tabular and data.tabular.hideRootSummary %}
+                {%- set resolvedTargetId = "root_entity_overlay_collection" if isNameColumn else "root_entity_overlay" %}
+              {%- endif %}
               {%- set buttonClass = "button-left" if item.isReverse else "button-right" %}
               <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
                 <a href="#{{ resolvedTargetId | urlencode }}">
@@ -1303,7 +1309,10 @@
           </div>
         {%- endfor %}
       {%- elif cell is mapping and cell.target_id and cell.text %}
-        {%- set resolvedCellTargetId = "root_entity_overlay" if cell.target_id == data.entryPoint and data.tabular and data.tabular.hideRootSummary else cell.target_id %}
+        {%- set resolvedCellTargetId = cell.target_id %}
+        {%- if cell.target_id == data.entryPoint and data.tabular and data.tabular.hideRootSummary %}
+          {%- set resolvedCellTargetId = "root_entity_overlay_collection" if isNameColumn else "root_entity_overlay" %}
+        {%- endif %}
         {%- set buttonClass = "button-left" if cell.isReverse else "button-right" %}
         <span{%- if not data.hasLayout %} class="{{ buttonClass }}"{% endif %}>
           <a href="#{{ resolvedCellTargetId | urlencode }}">
@@ -1319,7 +1328,7 @@
           {%- endif %}
         </a>
       {%- elif isNameColumn and row.id %}
-        {%- set resolvedRowTargetId = "root_entity_overlay" if row.id == data.entryPoint and data.tabular and data.tabular.hideRootSummary else row.id %}
+        {%- set resolvedRowTargetId = "root_entity_overlay_collection" if row.id == data.entryPoint and data.tabular and data.tabular.hideRootSummary else row.id %}
         <a href="#{{ resolvedRowTargetId | urlencode }}">
           {% if cell and cell.text %}
             {{ cell.text }}
@@ -1506,7 +1515,8 @@
       {%- set effectiveAnchorId = anchorId if anchorId else item.id %}
       {%- set effectiveCloseTargetId = closeTargetId if closeTargetId else data.entryPoint %}
       {%- set showSimpleAbout = config.settings.showSimpleAbout if config and config.settings and config.settings.showSimpleAbout is not none else false %}
-      {%- set isRootOverlay = item == data.ids[data.entryPoint] and class == "entity" and effectiveAnchorId == "root_entity_overlay" %}
+      {%- set isRootOverlay = item == data.ids[data.entryPoint] and class == "entity" and (effectiveAnchorId == "root_entity_overlay" or effectiveAnchorId == "root_entity_overlay_collection") %}
+      {%- set isPortalOverlay = item == data.ids[data.entryPoint] and class == "entity" and effectiveAnchorId == "root_entity_overlay" %}
       {%- set useSimpleAbout = showSimpleAbout and isRootOverlay %}
       {%- set entityTypeClass = "entity-type-" + (item.type[0] | replace(r/.*[:#\/]/, "") | lower) if item.type else "" %}
       {%- set encodingFormat = item.props["http://schema.org/encodingFormat"].fwd[0].value if item.props["http://schema.org/encodingFormat"] else "" %}
@@ -1520,6 +1530,24 @@
       {%- if item.props and "http://schema.org/description" in item.props and item.props["http://schema.org/description"].fwd and item.props["http://schema.org/description"].fwd.length > 0 %}
         {%- set rootDescription = item.props["http://schema.org/description"].fwd[0].value if item.props["http://schema.org/description"].fwd[0].value else item.props["http://schema.org/description"].fwd[0] %}
       {%- endif %}
+      {%- set portalName = "" %}
+      {%- if item.props and item.props["arcp://name,custom/terms#portalName"] and item.props["arcp://name,custom/terms#portalName"].fwd and item.props["arcp://name,custom/terms#portalName"].fwd.length > 0 %}
+        {%- set portalName = item.props["arcp://name,custom/terms#portalName"].fwd[0].value if item.props["arcp://name,custom/terms#portalName"].fwd[0].value else item.props["arcp://name,custom/terms#portalName"].fwd[0] %}
+      {%- elif item.props and item.props["custom:portalName"] and item.props["custom:portalName"].fwd and item.props["custom:portalName"].fwd.length > 0 %}
+        {%- set portalName = item.props["custom:portalName"].fwd[0].value if item.props["custom:portalName"].fwd[0].value else item.props["custom:portalName"].fwd[0] %}
+      {%- elif item.props and item.props["portalName"] and item.props["portalName"].fwd and item.props["portalName"].fwd.length > 0 %}
+        {%- set portalName = item.props["portalName"].fwd[0].value if item.props["portalName"].fwd[0].value else item.props["portalName"].fwd[0] %}
+      {%- endif %}
+      {%- set portalDescription = "" %}
+      {%- if item.props and item.props["arcp://name,custom/terms#portalDescription"] and item.props["arcp://name,custom/terms#portalDescription"].fwd and item.props["arcp://name,custom/terms#portalDescription"].fwd.length > 0 %}
+        {%- set portalDescription = item.props["arcp://name,custom/terms#portalDescription"].fwd[0].value if item.props["arcp://name,custom/terms#portalDescription"].fwd[0].value else item.props["arcp://name,custom/terms#portalDescription"].fwd[0] %}
+      {%- elif item.props and item.props["custom:portalDescription"] and item.props["custom:portalDescription"].fwd and item.props["custom:portalDescription"].fwd.length > 0 %}
+        {%- set portalDescription = item.props["custom:portalDescription"].fwd[0].value if item.props["custom:portalDescription"].fwd[0].value else item.props["custom:portalDescription"].fwd[0] %}
+      {%- elif item.props and item.props["portalDescription"] and item.props["portalDescription"].fwd and item.props["portalDescription"].fwd.length > 0 %}
+        {%- set portalDescription = item.props["portalDescription"].fwd[0].value if item.props["portalDescription"].fwd[0].value else item.props["portalDescription"].fwd[0] %}
+      {%- endif %}
+      {%- set popupRootName = portalName if isPortalOverlay and portalName else rootName %}
+      {%- set popupRootDescription = portalDescription if isPortalOverlay and portalDescription else rootDescription %}
 
       <div id="{{ effectiveAnchorId | urlencode }}" class="{{ class }}{{ " " + entityTypeClass if entityTypeClass else "" }}{{ " " + formatClass if formatClass else "" }}{{ " " + displayClass }}" data-close-target="{{ effectiveCloseTargetId }}">
         {%- if class == "entity" %}<div class="entity-panel{{ " simple-about" if useSimpleAbout else "" }}">{%- endif %}
@@ -1547,8 +1575,10 @@
               {%- endfor %}
             </div>
             <h2>
-              {%- if item.props and "http://schema.org/name" in item.props and item.props["http://schema.org/name"].fwd %}
-                {{ item.props["http://schema.org/name"].fwd[0].value   }}
+              {%- if item == data.ids[data.entryPoint] and isRootOverlay and popupRootName %}
+                {{ popupRootName }}
+              {%- elif item.props and "http://schema.org/name" in item.props and item.props["http://schema.org/name"].fwd %}
+                {{ item.props["http://schema.org/name"].fwd[0].value }}
               {% else %}
                 <!-- Use ID if name isn't available, e.g. files -->
                 {{ item.id }}
@@ -1556,6 +1586,8 @@
             </h2>
             {%- if item == data.ids[data.entryPoint] and class == "root" and rootDescription %}
               <p class="root-description">  {{ rootDescription | nl2br | safe }}</p>
+            {%- elif item == data.ids[data.entryPoint] and isRootOverlay and popupRootDescription %}
+              <p class="root-description">  {{ popupRootDescription | nl2br | safe }}</p>
             {%- endif %}
             {%- if not (item == data.ids[data.entryPoint]) %}
               <h2 class="id">{{ item.id }}</h2>
@@ -1610,9 +1642,9 @@
         <div class="entity-content-row">
           {%- if useSimpleAbout %}
             <div class="property-grid">
-              <h2>{{ rootName }}</h2>
-              {%- if rootDescription %}
-                <p class="root-description">{{ rootDescription | nl2br | safe }}</p>
+              <h2>{{ popupRootName }}</h2>
+              {%- if popupRootDescription %}
+                <p class="root-description">{{ popupRootDescription | nl2br | safe }}</p>
               {%- endif %}
             </div>
           {%- endif %}
@@ -1730,6 +1762,7 @@
 
     {%- if data.tabular and data.tabular.hideRootSummary %}
       {{ display(data.ids[data.entryPoint], "entity", "root_entity_overlay", data.entryPoint) }}
+      {{ display(data.ids[data.entryPoint], "entity", "root_entity_overlay_collection", data.entryPoint) }}
     {%- endif %}
 
     {%- for id, entity in data.ids %}
