@@ -1,5 +1,48 @@
 Just somewhere to try linking to templates for ROCSS.
 
+## Template folder conventions
+
+Each top-level folder in this repo is one selectable template. Two shapes
+are supported:
+
+### Single-page (flat)
+
+One folder, no subfolders: a `config.json`, a `style.css`, and one
+`template.html`, referenced by bare filename from `config.json`
+(`"root": {"template": "template.html"}`, `"style": "style.css"`). See
+`dyirbal/` for a working example. Use this when one root template covers
+every page (`config.json`'s `multipage` is `false` or omitted).
+
+### Multipage (bundle)
+
+A folder containing a `templates/` subfolder with one `.html` file per
+role, referenced from `config.json` by path relative to the *template
+folder* (not the subfolder):
+
+```
+<folder>/
+  config.json
+  templates/
+    root-template.html
+    <other-role>-template.html
+```
+
+```json
+{
+  "multipage": true,
+  "root": { "template": "templates/root-template.html" },
+  "types": {
+    "SomeType": { "template": "templates/some-type-template.html" }
+  }
+}
+```
+
+`config.json`'s `types` map lets different RO-Crate entity `@type`s render
+through different templates (e.g. one for a Collection page, another for a
+Document page), instead of a single template handling every page. See
+`person-centred/` for a working example, ported from a project-specific
+multipage site originally built directly against an RO-Crate.
+
 ## hideInTable
 
 `hideInTable` is supported on `navigationByType` column entries in `config.json`.

@@ -1,0 +1,462 @@
+<html lang="en">
+  <head>
+    {% set domain = data.pages[data.entryPoint].domain %}
+    {% set path = data.pages[data.entryPoint].path %}
+    {% set rootName = data.ids["./"].props["http://schema.org/name"].fwd[0].value if data.ids["./"] and data.ids["./"].props["http://schema.org/name"] %}
+
+    {% set description = data.ids[data.entryPoint].props["http://schema.org/description"].fwd[0].value if data.ids[data.entryPoint].props["http://schema.org/description"] %}
+
+    {# Facebook sharing image (Open Graph) #}
+    {% if domain %}
+    {# normalize URL parts and collapse duplicate slashes in the combined paths #}
+    {% set domain = domain | replace("https://", "") | replace("http://", "") | trim %}
+    {% set pagePath = path | trim %}
+    {% set ogUrlPath = (domain ~ "/" ~ pagePath) | replace("//", "/") %}
+    {% set ogImagePath = (domain ~ "/files/og-image.jpg") | replace("//", "/") %}
+    <meta property="og:url" content="https://{{ ogUrlPath }}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="http://{{ ogImagePath }}" />
+    <meta property="og:image:secure_url" content="https://{{ ogImagePath }}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    {% if rootName %}<meta property="og:title" content="{{ rootName }}" />{% endif %}
+    {% if description %}<meta property="og:description" content="{{ description }}" />{% endif %}
+    {% endif %}
+    {# // Facebook sharing image (Open Graph) #}
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if rootName %}<title>{{ rootName }}</title>{% else %}<title></title>{% endif %}
+    <link rel="icon" type="image/png" href="files/images/favicon.png" />
+    
+    <style>
+        html, body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif;
+            background-color: #fff;
+            margin: 0;
+        }
+        .page-title {
+            text-align: center;
+            background-color: #e67e22;
+            color: white;
+            font-weight: normal;
+            padding-top: 1.5em;
+            padding-bottom: 1.5em;
+            margin: 0;
+        }
+        .main-container {
+            width:100%;
+        }
+        .object-grid {
+            width:100%;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        .article-grid {
+            width: 100%;
+            max-width: 72rem;
+            margin: 0 auto 2.5rem;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            box-sizing: border-box;
+        }
+        .document-card {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .document-card a {
+            display: block;
+            color: #17301f;
+            text-decoration: none;
+            min-height: 100%;
+            box-sizing: border-box;
+        }
+        .document-card a:hover {
+            background: rgba(255,255,255,0.98);
+        }
+        .document-card-title {
+            font-size: 1.1rem;
+            line-height: 1.35;
+            font-weight: 600;
+        }
+        .document-card-summary {
+            margin-top: 0.6rem;
+            color: #3b5642;
+            font-size: 0.95rem;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 4;
+            overflow: hidden;
+        }
+        .document-card-thumb {
+            aspect-ratio: 16 / 9;
+            background: rgba(216,255,226,0.6);
+            overflow: hidden;
+        }
+        .document-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .document-card-body {
+            padding: 1rem 1.1rem;
+        }
+        @media (max-width: 700px) {
+            .object-grid {
+                flex-direction: column;
+            }
+            div.bird {
+                width: 90vw !important;
+                height: auto;
+            }
+        }
+        div.bird {
+            width: 200px;
+            height: 200px;
+            border: 1px solid #aaa;
+            border-radius: 8px;
+            margin: 1em;
+            background-size: cover;
+            background-position: center;
+            transition: box-shadow 0.1s, transform 0.1s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            cursor: pointer;
+        }
+        .object-grid div.bird:active {
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12) inset;
+            transform: translateY(2px) scale(0.97);
+            border-color: #888;
+        }
+        div.bird {
+            position: relative;
+            overflow: hidden;
+        }
+        div.bird > a {
+            display: block;
+            width: 100%;
+            height: 100%;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Styles for config.homePageId content override (see displayContent macro below) */
+        .page-shell {
+            min-height: 100vh;
+        }
+        .page-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0.4rem;
+            background: #e67e22;
+            color: #fff;
+            padding: 1.25rem 1rem;
+        }
+        .page-header a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .page-nav {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .page-nav a:hover {
+            text-decoration: underline;
+        }
+        .page-nav .nav-sep {
+            opacity: 0.5;
+        }
+        .page-nav .nav-current {
+            font-weight: 700;
+            color: #fff;
+            text-decoration: underline;
+        }
+        .doc-page-title {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+        .content {
+            width: min(54rem, calc(100vw - 2rem));
+            margin: 2rem auto;
+            padding: 1.5rem;
+            box-sizing: border-box;
+        }
+        .chapter {
+            max-width: 65ch;
+            margin-left: auto;
+            margin-right: auto;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .chapter:first-of-type {
+            border-top: 0;
+            padding-top: 0;
+            margin-top: 0;
+        }
+        .chapter h2 {
+            margin: 0 0 0.75rem;
+            font-size: 1.45rem;
+            color: #17301f;
+        }
+        .chapter-copy {
+            line-height: 1.6;
+        }
+        .chapter-copy p:first-child {
+            margin-top: 0;
+        }
+        .media-block {
+            margin-top: 1rem;
+        }
+        .document-part-row {
+            margin: 1rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+        }
+        .document-part-row:last-child {
+            margin-bottom: 0;
+        }
+        .document-part-children {
+            margin-left: 1rem;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(0, 0, 0, 0.12);
+        }
+        .part-title {
+            margin: 0 0 0.5rem;
+            color: #17301f;
+            font-size: 1.1rem;
+        }
+        .media-block img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+        }
+        .media-block audio {
+            width: 100%;
+            max-width: 28rem;
+        }
+        .audio-filename {
+            margin: 0.25rem 0 0;
+            font-size: 0.85rem;
+            color: #44614c;
+        }
+        .caption, .credit {
+            margin: 0.5rem 0 0;
+            line-height: 1.5;
+        }
+        .credit {
+            color: #44614c;
+            font-size: 0.95rem;
+        }
+        </style>
+</head>
+<body>
+
+{% macro resolveDeepTargetId(entityId, data, depth) %}
+    {%- set depth = depth or 0 -%}
+    {%- set entity = data.ids[entityId] -%}
+    {%- set parts = entity.props["http://schema.org/hasPart"].fwd if entity and entity.props["http://schema.org/hasPart"] else [] -%}
+    {%- if depth < 25 and parts.length == 1 and data.pages[parts[0].target_id] -%}
+        {{- resolveDeepTargetId(parts[0].target_id, data, depth + 1) -}}
+    {%- else -%}
+        {{- entityId -}}
+    {%- endif -%}
+{% endmacro %}
+
+{% macro findActiveCollectionId(entityId, data, depth) %}
+    {%- set depth = depth or 0 -%}
+    {%- set entity = data.ids[entityId] -%}
+    {%- if entity and "Collection" in entity.type -%}
+        {{- entityId -}}
+    {%- elif entity and depth < 25 and entity.props["http://schema.org/hasPart"] and entity.props["http://schema.org/hasPart"].rev and entity.props["http://schema.org/hasPart"].rev.length > 0 -%}
+        {{- findActiveCollectionId(entity.props["http://schema.org/hasPart"].rev[0].target_id, data, depth + 1) -}}
+    {%- endif -%}
+{% endmacro %}
+
+{% macro renderMediaEntity(mediaEntity) %}
+    <div class="media-block">
+        {% if mediaEntity.props["http://schema.org/image"] and mediaEntity.props["http://schema.org/image"].fwd %}
+            {% set imageSrc = mediaEntity.props["http://schema.org/image"].fwd[0].target_id %}
+            <img src="{{ imageSrc }}" alt="{{ mediaEntity.props['http://schema.org/caption'].fwd[0].value if mediaEntity.props['http://schema.org/caption'] and mediaEntity.props['http://schema.org/caption'].fwd else '' }}">
+        {% endif %}
+        {% if mediaEntity.props["http://schema.org/audio"] and mediaEntity.props["http://schema.org/audio"].fwd %}
+            {% set audioSrc = mediaEntity.props["http://schema.org/audio"].fwd[0].target_id %}
+            <audio controls>
+                <source src="{{ audioSrc }}" type="audio/mpeg">
+            </audio>
+            <p class="audio-filename">{{ audioSrc | replace(r/^.*\//, "") }}</p>
+        {% endif %}
+        {% if mediaEntity.props["http://schema.org/caption"] and mediaEntity.props["http://schema.org/caption"].fwd %}
+            <p class="caption">{{ mediaEntity.props["http://schema.org/caption"].fwd[0].value | safe }}</p>
+        {% endif %}
+        {% if mediaEntity.props["http://schema.org/creditText"] and mediaEntity.props["http://schema.org/creditText"].fwd %}
+            <p class="credit">{{ mediaEntity.props["http://schema.org/creditText"].fwd[0].value }}</p>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro renderDocumentPart(partEntity, data) %}
+    <div class="document-part-row">
+        {% if partEntity.props["http://schema.org/name"] and partEntity.props["http://schema.org/name"].fwd %}
+            <h3 class="part-title">{{ partEntity.props["http://schema.org/name"].fwd[0].value }}</h3>
+        {% endif %}
+
+        {% if partEntity.props["http://schema.org/text"] and partEntity.props["http://schema.org/text"].fwd %}
+            <div class="chapter-copy">{{ partEntity.props["http://schema.org/text"].fwd[0].value | safe }}</div>
+        {% endif %}
+
+        {% if partEntity.props["http://schema.org/hasPart"] and partEntity.props["http://schema.org/hasPart"].fwd.length > 0 %}
+            <div class="document-part-children">
+                {% for childRef in partEntity.props["http://schema.org/hasPart"].fwd %}
+                    {% set childEntity = data.ids[childRef.target_id] %}
+                    {% if childEntity %}
+                        {% if "bibo:DocumentPart" in childEntity.type or "bibo:Chapter" in childEntity.type %}
+                            {{ renderDocumentPart(childEntity, data) }}
+                        {% else %}
+                            {{ renderMediaEntity(childEntity) }}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro displayContent(data, entryPointId) %}
+    {% set item = data.ids[entryPointId] %}
+    {% set itemName = item.props["http://schema.org/name"].fwd[0].value if item.props["http://schema.org/name"] and item.props["http://schema.org/name"].fwd else item.id %}
+    {% set activeCollectionId = findActiveCollectionId(entryPointId, data, 0) | trim %}
+    {% set activeEntity = data.ids[activeCollectionId] %}
+    {% set activeName = activeEntity.props["http://schema.org/name"].fwd[0].value if activeEntity and activeEntity.props["http://schema.org/name"] and activeEntity.props["http://schema.org/name"].fwd else "" %}
+
+    <div class="page-shell">
+      <header class="page-header">
+        <h1 class="doc-page-title">{{ itemName }}</h1>
+        <nav class="page-nav">
+          <a href="ro-crate-preview.html"{% if activeName | lower == "home" %} class="nav-current" aria-current="page"{% endif %}>Home</a>
+          {% for collectionId in data.types["Collection"] %}
+            {% set collectionEntity = data.ids[collectionId] %}
+            {% set collectionName = collectionEntity.props["http://schema.org/name"].fwd[0].value if collectionEntity and collectionEntity.props["http://schema.org/name"] and collectionEntity.props["http://schema.org/name"].fwd else collectionId %}
+            {% set resolvedCollectionId = resolveDeepTargetId(collectionId, data, 0) | trim %}
+            {% set collectionPath = data.pages[resolvedCollectionId].path if data.pages[resolvedCollectionId] else '' %}
+            {% if collectionName | lower == "home" %}
+              {# Already represented by the fixed "Home" link above; skip to avoid a duplicate entry. #}
+            {% elif collectionPath %}
+              <span class="nav-sep">|</span>
+              <a href="{{ collectionPath }}"{% if collectionId == activeCollectionId %} class="nav-current" aria-current="page"{% endif %}>{{ collectionName }}</a>
+            {% endif %}
+          {% endfor %}
+        </nav>
+      </header>
+
+      <main class="content">
+        {% if item.props["http://schema.org/hasPart"] and item.props["http://schema.org/hasPart"].fwd.length > 0 %}
+            {% for part in item.props["http://schema.org/hasPart"].fwd %}
+                {% set chapter = data.ids[part.target_id] %}
+                {% if chapter %}
+                <section class="chapter">
+                    {% if chapter.props["http://schema.org/name"] and chapter.props["http://schema.org/name"].fwd %}
+                    <h2>{{ chapter.props["http://schema.org/name"].fwd[0].value }}</h2>
+                    {% endif %}
+
+                    {% if chapter.props["http://schema.org/text"] and chapter.props["http://schema.org/text"].fwd %}
+                    <div class="chapter-copy">{{ chapter.props["http://schema.org/text"].fwd[0].value | safe }}</div>
+                    {% endif %}
+
+                    {% if chapter.props["http://schema.org/hasPart"] and chapter.props["http://schema.org/hasPart"].fwd.length > 0 %}
+                        {% for partRef in chapter.props["http://schema.org/hasPart"].fwd %}
+                            {% set partEntity = data.ids[partRef.target_id] %}
+                            {% if partEntity %}
+                                {% if "bibo:DocumentPart" in partEntity.type or "bibo:Chapter" in partEntity.type %}
+                                    {{ renderDocumentPart(partEntity, data) }}
+                                {% else %}
+                                    {{ renderMediaEntity(partEntity) }}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </section>
+                {% endif %}
+            {% endfor %}
+        {% elif item.props["http://schema.org/articleBody"] and item.props["http://schema.org/articleBody"].fwd %}
+            <div class="chapter-copy">{{ item.props["http://schema.org/articleBody"].fwd[0].value | safe }}</div>
+        {% endif %}
+      </main>
+    </div>
+{% endmacro %}
+
+{% macro display(data, class) %}
+    {% set item = data.ids[data.entryPoint] %}
+
+    <div id="{{item.id}}" class="{{class}}">
+        <div class="header-row">
+            <h2 class="page-title">
+                {% if item.props and "http://schema.org/name" in item.props and item.props["http://schema.org/name"].fwd %}
+                {{ item.props["http://schema.org/name"].fwd[0].value }}
+                {% endif %}
+            </h2>
+        </div>
+
+        {% if item.props["http://schema.org/hasPart"] and item.props["http://schema.org/hasPart"].fwd.length > 0 %}
+        <div class="article-grid">
+            {% for part in item.props["http://schema.org/hasPart"].fwd %}
+                {% set entity = data.ids[part.target_id] %}
+                {% if entity and "Collection" in entity.type and entity.props and "http://schema.org/name" in entity.props and entity.props["http://schema.org/name"].fwd %}
+                {% set resolvedTargetId = resolveDeepTargetId(part.target_id, data, 0) | trim %}
+                {% set pagePath = data.pages[resolvedTargetId].path if data.pages[resolvedTargetId] else '' %}
+                {% set memberCount = entity.props["http://schema.org/hasPart"].fwd.length if entity.props["http://schema.org/hasPart"] else 0 %}
+                {% set thumbnailPath = entity.previewImage if entity.previewImage else '' %}
+                {% set thumbnailAlt = entity.previewImageAlt if entity.previewImageAlt else entity.props["http://schema.org/name"].fwd[0].value %}
+                <div class="document-card">
+                    {% if pagePath %}
+                    <a href="{{ pagePath }}">
+                        {% if thumbnailPath %}
+                        <div class="document-card-thumb">
+                            <img src="{{ thumbnailPath }}" alt="{{ thumbnailAlt }}">
+                        </div>
+                        {% endif %}
+                        <div class="document-card-body">
+                            <div class="document-card-title">{{ entity.props["http://schema.org/name"].fwd[0].value }}</div>
+                            <div class="document-card-summary">{{ memberCount }} item{{ "s" if memberCount != 1 else "" }}</div>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="document-card-body">
+                        <div class="document-card-title">{{ entity.props["http://schema.org/name"].fwd[0].value }}</div>
+                        <div class="document-card-summary">{{ memberCount }} item{{ "s" if memberCount != 1 else "" }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+
+    </div>
+{% endmacro %}
+
+{% set homeContentId = resolveDeepTargetId(config.homePageId, data, 0) | trim if config.homePageId else '' %}
+{% if homeContentId and data.ids[homeContentId] %}
+    {{ displayContent(data, homeContentId) }}
+{% else %}
+    {{ display(data, "root") }}
+{% endif %}
+
+</body>
+</html>

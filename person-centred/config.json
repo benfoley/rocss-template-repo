@@ -1,0 +1,10 @@
+{
+    "multipage": true,
+    "homePageId": "#AnmWeb1-HOME",
+    "types": {
+      "Collection": {"template": "templates/collection-template.html"},
+      "bibo:DocumentPart": {"template": "templates/documentPart-template.html"}
+    },
+    "root" : {"template": "templates/root-template.html"},
+    "domain": "http://example.com/april"
+}

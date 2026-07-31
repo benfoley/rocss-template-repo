@@ -1,0 +1,242 @@
+<html lang="en">
+  <head>
+    {% set item = data.ids[data.entryPoint] %}
+    {% set itemName = item.props["http://schema.org/name"].fwd[0].value if item.props["http://schema.org/name"] and item.props["http://schema.org/name"].fwd else item.id %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ itemName }}</title>
+    <style>
+      html, body {
+        font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif;
+        background: #fff;
+        margin: 0;
+        color: #13261a;
+      }
+      .page-shell {
+        min-height: 100vh;
+      }
+      .page-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.4rem;
+        background: #e67e22;
+        color: #fff;
+        padding: 1.25rem 1rem;
+      }
+      .page-header a {
+        color: #fff;
+        text-decoration: none;
+      }
+      .page-nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+      }
+      .page-nav a:hover {
+        text-decoration: underline;
+      }
+      .page-nav .nav-sep {
+        opacity: 0.5;
+      }
+      .page-nav .nav-current {
+        font-weight: 700;
+        color: #fff;
+        text-decoration: underline;
+      }
+      .page-title {
+        margin: 0;
+        font-size: 1.7rem;
+        font-weight: 500;
+      }
+      .content {
+        width: min(54rem, calc(100vw - 2rem));
+        margin: 2rem auto;
+        padding: 1.5rem;
+        box-sizing: border-box;
+      }
+      .list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2.5rem 2rem;
+      }
+      .list a, .list .label {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+      }
+      .list-thumb {
+        aspect-ratio: 16 / 10;
+        width: 100%;
+        background: rgba(216,255,226,0.6);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+        overflow: hidden;
+      }
+      .list-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+      }
+      .list-title {
+        margin-top: 1.1rem;
+        font-size: 1.35rem;
+        font-weight: 600;
+        color: #13261a;
+      }
+      .list-summary {
+        margin-top: 0.5rem;
+        color: #3b5642;
+        line-height: 1.6;
+      }
+      .list-link {
+        color: #13261a;
+        white-space: nowrap;
+      }
+      .list a:hover .list-link {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    {% macro resolveDeepTargetId(entityId, data, depth) %}
+      {%- set depth = depth or 0 -%}
+      {%- set entity = data.ids[entityId] -%}
+      {%- set parts = entity.props["http://schema.org/hasPart"].fwd if entity and entity.props["http://schema.org/hasPart"] else [] -%}
+      {%- if depth < 25 and parts.length == 1 and data.pages[parts[0].target_id] -%}
+        {{- resolveDeepTargetId(parts[0].target_id, data, depth + 1) -}}
+      {%- else -%}
+        {{- entityId -}}
+      {%- endif -%}
+    {% endmacro %}
+    {# NOTE: nunjucks macro calls return SafeString objects, which are always JS-truthy
+       even when empty. Any "if candidate" check on a macro-call result must first force
+       primitive-string coercion via `~ ''`, otherwise the check is always true. Recursion
+       over sibling lists is done via an index-based helper macro rather than a
+       for-loop + mutable accumulator: reassigning an outer variable from inside a
+       {% set %} that depends on a macro call, nested inside {% if %} inside {% for %},
+       silently fails to propagate past the loop (a nunjucks scoping quirk) -- plain
+       tail recursion (as used by resolveDeepTargetId/findActiveCollectionId above) does
+       not have this problem. #}
+    {% macro findFirstImageInList(parts, data, index, depth) %}
+      {%- if index < parts.length -%}
+        {%- set candidate = (findFirstImage(parts[index].target_id, data, depth) | trim) ~ '' -%}
+        {%- if candidate -%}
+          {{- candidate -}}
+        {%- else -%}
+          {{- findFirstImageInList(parts, data, index + 1, depth) -}}
+        {%- endif -%}
+      {%- endif -%}
+    {% endmacro %}
+    {% macro findFirstImage(entityId, data, depth) %}
+      {%- set depth = depth or 0 -%}
+      {%- set entity = data.ids[entityId] -%}
+      {%- if entity and entity.props["http://schema.org/image"] and entity.props["http://schema.org/image"].fwd and entity.props["http://schema.org/image"].fwd.length > 0 -%}
+        {{- entity.props["http://schema.org/image"].fwd[0].target_id -}}
+      {%- elif entity and depth < 15 and entity.props["http://schema.org/hasPart"] and entity.props["http://schema.org/hasPart"].fwd and entity.props["http://schema.org/hasPart"].fwd.length > 0 -%}
+        {{- findFirstImageInList(entity.props["http://schema.org/hasPart"].fwd, data, 0, depth + 1) -}}
+      {%- endif -%}
+    {% endmacro %}
+    {# Looks at descendants' own text (never the entity's own), since top-level parts in
+       this crate carry a redundant full-text blob that isn't suitable as a short excerpt.
+       `| safe` is required on the text interpolation below: without it, autoescaping turns
+       real "<p>" tags into "&lt;p&gt;" before the caller's `striptags` filter ever sees them. #}
+    {% macro findFirstExcerptInList(parts, data, index, depth) %}
+      {%- if index < parts.length -%}
+        {%- set child = data.ids[parts[index].target_id] -%}
+        {%- if child and child.props["http://schema.org/text"] and child.props["http://schema.org/text"].fwd and child.props["http://schema.org/text"].fwd.length > 0 -%}
+          {{- child.props["http://schema.org/text"].fwd[0].value | safe -}}
+        {%- else -%}
+          {%- set candidate = (findFirstExcerpt(parts[index].target_id, data, depth) | trim) ~ '' -%}
+          {%- if candidate -%}
+            {{- candidate | safe -}}
+          {%- else -%}
+            {{- findFirstExcerptInList(parts, data, index + 1, depth) -}}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endif -%}
+    {% endmacro %}
+    {% macro findFirstExcerpt(entityId, data, depth) %}
+      {%- set depth = depth or 0 -%}
+      {%- set entity = data.ids[entityId] -%}
+      {%- if entity and depth < 15 and entity.props["http://schema.org/hasPart"] and entity.props["http://schema.org/hasPart"].fwd and entity.props["http://schema.org/hasPart"].fwd.length > 0 -%}
+        {{- findFirstExcerptInList(entity.props["http://schema.org/hasPart"].fwd, data, 0, depth + 1) -}}
+      {%- endif -%}
+    {% endmacro %}
+    {% macro findActiveCollectionId(entityId, data, depth) %}
+      {%- set depth = depth or 0 -%}
+      {%- set entity = data.ids[entityId] -%}
+      {%- if entity and "Collection" in entity.type -%}
+        {{- entityId -}}
+      {%- elif entity and depth < 25 and entity.props["http://schema.org/hasPart"] and entity.props["http://schema.org/hasPart"].rev and entity.props["http://schema.org/hasPart"].rev.length > 0 -%}
+        {{- findActiveCollectionId(entity.props["http://schema.org/hasPart"].rev[0].target_id, data, depth + 1) -}}
+      {%- endif -%}
+    {% endmacro %}
+    {% set activeCollectionId = findActiveCollectionId(data.entryPoint, data, 0) | trim %}
+    {% set activeEntity = data.ids[activeCollectionId] %}
+    {% set activeName = activeEntity.props["http://schema.org/name"].fwd[0].value if activeEntity and activeEntity.props["http://schema.org/name"] and activeEntity.props["http://schema.org/name"].fwd else "" %}
+    <div class="page-shell">
+      <header class="page-header">
+        <h1 class="page-title">{{ itemName }}</h1>
+        <nav class="page-nav">
+          <a href="../../../../../ro-crate-preview.html"{% if activeName | lower == "home" %} class="nav-current" aria-current="page"{% endif %}>Home</a>
+          {% for collectionId in data.types["Collection"] %}
+            {% set collectionEntity = data.ids[collectionId] %}
+            {% set collectionName = collectionEntity.props["http://schema.org/name"].fwd[0].value if collectionEntity and collectionEntity.props["http://schema.org/name"] and collectionEntity.props["http://schema.org/name"].fwd else collectionId %}
+            {% set resolvedCollectionId = resolveDeepTargetId(collectionId, data, 0) | trim %}
+            {% set collectionPath = data.pages[resolvedCollectionId].path if data.pages[resolvedCollectionId] else '' %}
+            {% if collectionName | lower == "home" %}
+              {# Already represented by the fixed "Home" link above; skip to avoid a duplicate entry. #}
+            {% elif collectionPath %}
+              <span class="nav-sep">|</span>
+              <a href="../../../../../{{ collectionPath }}"{% if collectionId == activeCollectionId %} class="nav-current" aria-current="page"{% endif %}>{{ collectionName }}</a>
+            {% endif %}
+          {% endfor %}
+        </nav>
+      </header>
+
+      <main class="content">
+        <ul class="list">
+          {% if item.props["http://schema.org/hasPart"] and item.props["http://schema.org/hasPart"].fwd.length > 0 %}
+            {% for part in item.props["http://schema.org/hasPart"].fwd %}
+              {% set target = data.ids[part.target_id] %}
+              {% set targetName = target.props["http://schema.org/name"].fwd[0].value if target and target.props["http://schema.org/name"] and target.props["http://schema.org/name"].fwd else part.target_id %}
+              {% set pagePath = data.pages[part.target_id].path if data.pages[part.target_id] else '' %}
+              {% set thumbnailPath = target.previewImage if target and target.previewImage else (findFirstImage(part.target_id, data, 0) | trim) ~ '' %}
+              {% set thumbnailAlt = target.previewImageAlt if target and target.previewImageAlt else targetName %}
+              {% set excerpt = ((findFirstExcerpt(part.target_id, data, 0) | trim) ~ '') | striptags | replace("&amp;", "&") | replace("&lt;", "<") | replace("&gt;", ">") | replace("&quot;", '"') | replace("&#39;", "'") | truncate(160) %}
+              <li>
+                {% if pagePath %}
+                <a href="../../../../../{{ pagePath }}">
+                  {% if thumbnailPath %}
+                  <div class="list-thumb">
+                    <img src="../../../../../{{ thumbnailPath }}" alt="{{ thumbnailAlt }}">
+                  </div>
+                  {% endif %}
+                  <div class="list-title">{{ targetName }}</div>
+                  <div class="list-summary">{% if excerpt %}{{ excerpt }} {% endif %}<span class="list-link">(Read more <span class="arrow">&rarr;</span>)</span></div>
+                </a>
+                {% else %}
+                <div class="label">
+                  <div class="list-title">{{ targetName }}</div>
+                  {% if excerpt %}<div class="list-summary">{{ excerpt }}</div>{% endif %}
+                </div>
+                {% endif %}
+              </li>
+            {% endfor %}
+          {% else %}
+            <li><div class="label">No items listed.</div></li>
+          {% endif %}
+        </ul>
+      </main>
+    </div>
+  </body>
+</html>

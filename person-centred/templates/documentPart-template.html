@@ -1,0 +1,264 @@
+<html lang="en">
+  <head>
+    {% set item = data.ids[data.entryPoint] %}
+    {% set itemName = item.props["http://schema.org/name"].fwd[0].value if item.props["http://schema.org/name"] and item.props["http://schema.org/name"].fwd else item.id %}
+                {% set subCollection = item.id.split("#")[0] | replace(r/\/[^\/]*$/, "") if item and item.id else "" %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ itemName }}</title>
+    <style>
+        html, body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Liberation Sans', sans-serif;
+            background: #fff;
+            margin: 0;
+            color: #13261a;
+        }
+        .page-shell {
+            min-height: 100vh;
+        }
+        .page-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0.4rem;
+            background: #e67e22;
+            color: #fff;
+            padding: 1.25rem 1rem;
+        }
+        .page-header a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .page-nav {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .page-nav a:hover {
+            text-decoration: underline;
+        }
+        .page-nav .nav-sep {
+            opacity: 0.5;
+        }
+        .page-nav .nav-current {
+            font-weight: 700;
+            color: #fff;
+            text-decoration: underline;
+        }
+        .page-title {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+        .content {
+            width: min(54rem, calc(100vw - 2rem));
+            margin: 2rem auto;
+            padding: 1.5rem;
+            box-sizing: border-box;
+        }
+        .chapter {
+            max-width: 65ch;
+            margin-left: auto;
+            margin-right: auto;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding-top: 1.5rem;
+        }
+        .chapter:first-of-type {
+            border-top: 0;
+            padding-top: 0;
+        }
+        .chapter h2 {
+            margin: 0 0 0.75rem;
+            font-size: 1.45rem;
+            color: #17301f;
+        }
+        .chapter-copy {
+            line-height: 1.6;
+        }
+        .chapter-copy p:first-child {
+            margin-top: 0;
+        }
+        .media-block {
+            margin-top: 1rem;
+        }
+        .document-part-row {
+            margin: 1rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+        }
+        .document-part-row:last-child {
+            margin-bottom: 0;
+        }
+        .document-part-children {
+            margin-left: 1rem;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(0, 0, 0, 0.12);
+        }
+        .part-title {
+            margin: 0 0 0.5rem;
+            color: #17301f;
+            font-size: 1.1rem;
+        }
+        .media-block img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+        }
+        .media-block audio {
+            width: 100%;
+            max-width: 28rem;
+        }
+        .audio-filename {
+            margin: 0.25rem 0 0;
+            font-size: 0.85rem;
+            color: #44614c;
+        }
+        .caption, .credit {
+            margin: 0.5rem 0 0;
+            line-height: 1.5;
+        }
+        .credit {
+            color: #44614c;
+            font-size: 0.95rem;
+        }
+    </style>
+  </head>
+  <body>
+    {% macro findActiveCollectionId(entityId, data, depth) %}
+      {%- set depth = depth or 0 -%}
+      {%- set entity = data.ids[entityId] -%}
+      {%- if entity and "Collection" in entity.type -%}
+        {{- entityId -}}
+      {%- elif entity and depth < 25 and entity.props["http://schema.org/hasPart"] and entity.props["http://schema.org/hasPart"].rev and entity.props["http://schema.org/hasPart"].rev.length > 0 -%}
+        {{- findActiveCollectionId(entity.props["http://schema.org/hasPart"].rev[0].target_id, data, depth + 1) -}}
+      {%- endif -%}
+    {% endmacro %}
+    {% macro resolveDeepTargetId(entityId, data, depth) %}
+      {%- set depth = depth or 0 -%}
+      {%- set entity = data.ids[entityId] -%}
+      {%- set parts = entity.props["http://schema.org/hasPart"].fwd if entity and entity.props["http://schema.org/hasPart"] else [] -%}
+      {%- if depth < 25 and parts.length == 1 and data.pages[parts[0].target_id] -%}
+        {{- resolveDeepTargetId(parts[0].target_id, data, depth + 1) -}}
+      {%- else -%}
+        {{- entityId -}}
+      {%- endif -%}
+    {% endmacro %}
+    {% set activeCollectionId = findActiveCollectionId(data.entryPoint, data, 0) | trim %}
+    {% set activeEntity = data.ids[activeCollectionId] %}
+    {% set activeName = activeEntity.props["http://schema.org/name"].fwd[0].value if activeEntity and activeEntity.props["http://schema.org/name"] and activeEntity.props["http://schema.org/name"].fwd else "" %}
+    {% macro renderMediaEntity(mediaEntity, subCollection) %}
+        <div class="media-block">
+            {% if mediaEntity.props["http://schema.org/image"] and mediaEntity.props["http://schema.org/image"].fwd %}
+                {% set imageTarget = mediaEntity.props["http://schema.org/image"].fwd[0].target_id %}
+                {% set imageSrc = imageTarget %}
+                {% if subCollection and imageTarget and imageTarget.startsWith("media/") %}
+                    {% set imageSrc = subCollection + "/" + imageTarget %}
+                {% endif %}
+                <img src="../../../../../{{ imageSrc }}" alt="{{ mediaEntity.props['http://schema.org/caption'].fwd[0].value if mediaEntity.props['http://schema.org/caption'] and mediaEntity.props['http://schema.org/caption'].fwd else '' }}">
+            {% endif %}
+            {% if mediaEntity.props["http://schema.org/audio"] and mediaEntity.props["http://schema.org/audio"].fwd %}
+                {% set audioTarget = mediaEntity.props["http://schema.org/audio"].fwd[0].target_id %}
+                {% set audioSrc = audioTarget %}
+                {% if subCollection and audioTarget and audioTarget.startsWith("media/") %}
+                    {% set audioSrc = subCollection + "/" + audioTarget %}
+                {% endif %}
+                <audio controls>
+                    <source src="../../../../../{{ audioSrc }}" type="audio/mpeg">
+                </audio>
+                <p class="audio-filename">{{ audioTarget | replace(r/^.*\//, "") }}</p>
+            {% endif %}
+            {% if mediaEntity.props["http://schema.org/caption"] and mediaEntity.props["http://schema.org/caption"].fwd %}
+                <p class="caption">{{ mediaEntity.props["http://schema.org/caption"].fwd[0].value | safe }}</p>
+            {% endif %}
+            {% if mediaEntity.props["http://schema.org/creditText"] and mediaEntity.props["http://schema.org/creditText"].fwd %}
+                <p class="credit">{{ mediaEntity.props["http://schema.org/creditText"].fwd[0].value }}</p>
+            {% endif %}
+        </div>
+    {% endmacro %}
+
+    {% macro renderDocumentPart(partEntity, subCollection, data) %}
+        <div class="document-part-row">
+            {% if partEntity.props["http://schema.org/name"] and partEntity.props["http://schema.org/name"].fwd %}
+                <h3 class="part-title">{{ partEntity.props["http://schema.org/name"].fwd[0].value }}</h3>
+            {% endif %}
+
+            {% if partEntity.props["http://schema.org/text"] and partEntity.props["http://schema.org/text"].fwd %}
+                <div class="chapter-copy">{{ partEntity.props["http://schema.org/text"].fwd[0].value | safe }}</div>
+            {% endif %}
+
+            {% if partEntity.props["http://schema.org/hasPart"] and partEntity.props["http://schema.org/hasPart"].fwd.length > 0 %}
+                <div class="document-part-children">
+                    {% for childRef in partEntity.props["http://schema.org/hasPart"].fwd %}
+                        {% set childEntity = data.ids[childRef.target_id] %}
+                        {% if childEntity %}
+                            {% if "bibo:DocumentPart" in childEntity.type or "bibo:Chapter" in childEntity.type %}
+                                {{ renderDocumentPart(childEntity, subCollection, data) }}
+                            {% else %}
+                                {{ renderMediaEntity(childEntity, subCollection) }}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endmacro %}
+
+    <div class="page-shell">
+      <header class="page-header">
+        <h1 class="page-title">{{ itemName }}</h1>
+        <nav class="page-nav">
+          <a href="../../../../../ro-crate-preview.html"{% if activeName | lower == "home" %} class="nav-current" aria-current="page"{% endif %}>Home</a>
+          {% for collectionId in data.types["Collection"] %}
+            {% set collectionEntity = data.ids[collectionId] %}
+            {% set collectionName = collectionEntity.props["http://schema.org/name"].fwd[0].value if collectionEntity and collectionEntity.props["http://schema.org/name"] and collectionEntity.props["http://schema.org/name"].fwd else collectionId %}
+            {% set resolvedCollectionId = resolveDeepTargetId(collectionId, data, 0) | trim %}
+            {% set collectionPath = data.pages[resolvedCollectionId].path if data.pages[resolvedCollectionId] else '' %}
+            {% if collectionName | lower == "home" %}
+              {# Already represented by the fixed "Home" link above; skip to avoid a duplicate entry. #}
+            {% elif collectionPath %}
+              <span class="nav-sep">|</span>
+              <a href="../../../../../{{ collectionPath }}"{% if collectionId == activeCollectionId %} class="nav-current" aria-current="page"{% endif %}>{{ collectionName }}</a>
+            {% endif %}
+          {% endfor %}
+        </nav>
+      </header>
+
+      <main class="content">
+        {% if item.props["http://schema.org/hasPart"] and item.props["http://schema.org/hasPart"].fwd.length > 0 %}
+            {% for part in item.props["http://schema.org/hasPart"].fwd %}
+                {% set chapter = data.ids[part.target_id] %}
+                {% if chapter %}
+                <section class="chapter">
+                    {% if chapter.props["http://schema.org/name"] and chapter.props["http://schema.org/name"].fwd %}
+                    <h2>{{ chapter.props["http://schema.org/name"].fwd[0].value }}</h2>
+                    {% endif %}
+
+                    {% if chapter.props["http://schema.org/text"] and chapter.props["http://schema.org/text"].fwd %}
+                    <div class="chapter-copy">{{ chapter.props["http://schema.org/text"].fwd[0].value | safe }}</div>
+                    {% endif %}
+
+                    {% if chapter.props["http://schema.org/hasPart"] and chapter.props["http://schema.org/hasPart"].fwd.length > 0 %}
+                        {% for partRef in chapter.props["http://schema.org/hasPart"].fwd %}
+                            {% set partEntity = data.ids[partRef.target_id] %}
+                            {% if partEntity %}
+                                {% if "bibo:DocumentPart" in partEntity.type or "bibo:Chapter" in partEntity.type %}
+                                    {{ renderDocumentPart(partEntity, subCollection, data) }}
+                                {% else %}
+                                    {{ renderMediaEntity(partEntity, subCollection) }}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </section>
+                {% endif %}
+            {% endfor %}
+        {% elif item.props["http://schema.org/articleBody"] and item.props["http://schema.org/articleBody"].fwd %}
+            <div class="chapter-copy">{{ item.props["http://schema.org/articleBody"].fwd[0].value | safe }}</div>
+        {% endif %}
+      </main>
+    </div>
+  </body>
+</html>
