@@ -1,0 +1,10 @@
+{
+    "multipage": true,
+    "types": {
+      "RepositoryObject": {"template": "templates/subobject-template.html"},
+      "Person": {"template": "templates/person-template.html"},
+      "AboutPage": {"template": "templates/about-template.html"}
+    },
+    "root" : {"template": "templates/root-template.html"},
+    "domain": "http://example.com/birds"
+}
