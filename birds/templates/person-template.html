@@ -182,8 +182,8 @@
     {% endmacro %}
 
     {% macro showHasPartImage(item) %}
-        {% if item.props["arcp://name,custom/terms#image"] %}
-            {% set img = item.props["arcp://name,custom/terms#image"].fwd[0].target_id %}
+        {% if item.props["http://schema.org/image"] %}
+            {% set img = item.props["http://schema.org/image"].fwd[0].target_id %}
             <script>
                 console.log("img:", {{ img | dump | safe }});
             </script>   

@@ -143,7 +143,7 @@
             {% set sorted_ids = data.types.RepositoryObject | sort %}
             {% for entity_id in sorted_ids %}
                 {% set entity = data.ids[entity_id] %}
-                {% set imagePath = entity.props["arcp://name,custom/terms#image"].fwd[0].target_id %}
+                {% set imagePath = entity.props["http://schema.org/image"].fwd[0].target_id %}
                 {% set pagePath= data.pages[entity_id].path if data.pages[entity_id] else '' %}
 
                 <div class="bird" style="background-image: url('{{ imagePath }}');">
@@ -171,7 +171,7 @@
             {% set sorted_ids = data.types.Person | sort %}
             {% for entity_id in sorted_ids %}
                 {% set entity = data.ids[entity_id] %}
-                {% set imagePath = entity.props["arcp://name,custom/terms#image"].fwd[0].target_id %}
+                {% set imagePath = entity.props["http://schema.org/image"].fwd[0].target_id %}
                 {% set pagePath= data.pages[entity_id].path if data.pages[entity_id] else '' %}
 
                 <div class="bird" style="background-image: url('{{ imagePath }}');">
