@@ -337,18 +337,25 @@
     </div>
 {% endmacro %}
 
-{% macro displayContent(data, entryPointId) %}
+{% macro displayContent(data, entryPointId, homeCollectionId) %}
     {% set item = data.ids[entryPointId] %}
     {% set itemName = item.props["http://schema.org/name"].fwd[0].value if item.props["http://schema.org/name"] and item.props["http://schema.org/name"].fwd else item.id %}
-    {% set activeCollectionId = findActiveCollectionId(entryPointId, data, 0) | trim %}
-    {% set activeEntity = data.ids[activeCollectionId] %}
-    {% set activeName = activeEntity.props["http://schema.org/name"].fwd[0].value if activeEntity and activeEntity.props["http://schema.org/name"] and activeEntity.props["http://schema.org/name"].fwd else "" %}
+    {# ~ "" forces a plain string: a macro call's return value is always a
+       Nunjucks SafeString *object*, and comparing two such objects with ==
+       is JS reference equality (always false for two separately-constructed
+       instances), not the value equality this needs. #}
+    {% set activeCollectionId = (findActiveCollectionId(entryPointId, data, 0) | trim) ~ "" %}
 
     <div class="page-shell">
       <header class="page-header">
         <h1 class="doc-page-title">{{ itemName }}</h1>
         <nav class="page-nav">
-          <a href="ro-crate-preview.html"{% if activeName | lower == "home" %} class="nav-current" aria-current="page"{% endif %}>Home</a>
+          {# The fixed "Home" link stands in for whichever topic homePageId
+             points at — that topic never gets its own separate entry below,
+             so comparing collectionId to homeCollectionId (not the topic's
+             name, which is a folder name like "AnmWeb1_HOME", not "Home") is
+             what both marks Home current and de-duplicates the topic. #}
+          <a href="ro-crate-preview.html"{% if homeCollectionId and activeCollectionId == homeCollectionId %} class="nav-current" aria-current="page"{% endif %}>Home</a>
           {# Iterate #derivedContent's hasPart (not the root dataset's own — the
              root's only members are #derivedContent and #sourceDocuments) to
              preserve the builder-defined collection order. #}
@@ -361,7 +368,7 @@
               {% set collectionName = collectionEntity.props["http://schema.org/name"].fwd[0].value if collectionEntity.props["http://schema.org/name"] and collectionEntity.props["http://schema.org/name"].fwd else collectionId %}
               {% set resolvedCollectionId = resolveDeepTargetId(collectionId, data, 0) | trim %}
               {% set collectionPath = data.pages[resolvedCollectionId].path if data.pages[resolvedCollectionId] else '' %}
-              {% if collectionName | lower == "home" %}
+              {% if collectionId == homeCollectionId %}
                 {# Already represented by the fixed "Home" link above; skip to avoid a duplicate entry. #}
               {% elif collectionPath %}
                 <span class="nav-sep">|</span>
@@ -465,8 +472,9 @@
 {% endmacro %}
 
 {% set homeContentId = resolveDeepTargetId(config.homePageId, data, 0) | trim if config.homePageId else '' %}
+{% set homeCollectionId = (findActiveCollectionId(config.homePageId, data, 0) | trim if config.homePageId else '') ~ "" %}
 {% if homeContentId and data.ids[homeContentId] %}
-    {{ displayContent(data, homeContentId) }}
+    {{ displayContent(data, homeContentId, homeCollectionId) }}
 {% else %}
     {{ display(data, "root") }}
 {% endif %}
