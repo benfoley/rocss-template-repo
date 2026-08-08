@@ -102,6 +102,11 @@
             position: relative;
             overflow: hidden;
         }
+        /* A speaker or entry with no picture: a plain tile rather than a
+           broken-looking empty frame. */
+        div.bird-no-image {
+            background-color: rgba(127, 127, 127, 0.18);
+        }
         div.bird > a {
             display: block;
             width: 100%;
@@ -146,7 +151,12 @@
                 {% set imagePath = entity.props["http://schema.org/image"].fwd[0].target_id %}
                 {% set pagePath= data.pages[entity_id].path if data.pages[entity_id] else '' %}
 
-                <div class="bird" style="background-image: url('{{ imagePath }}');">
+                {# An entity with no image would otherwise emit url(''), which
+                   browsers resolve against the current page — a request for the
+                   page itself, and an empty card either way. Mark it instead so
+                   it can be styled as a deliberate blank. #}
+                <div class="bird{% if not imagePath %} bird-no-image{% endif %}"
+                     {% if imagePath %}style="background-image: url('{{ imagePath }}');"{% endif %}>
                     <a href="{{ pagePath }}">
                         <div class="bird-name">
                             {{ entity.props["http://schema.org/name"].fwd[0].value }}
@@ -174,7 +184,12 @@
                 {% set imagePath = entity.props["http://schema.org/image"].fwd[0].target_id %}
                 {% set pagePath= data.pages[entity_id].path if data.pages[entity_id] else '' %}
 
-                <div class="bird" style="background-image: url('{{ imagePath }}');">
+                {# An entity with no image would otherwise emit url(''), which
+                   browsers resolve against the current page — a request for the
+                   page itself, and an empty card either way. Mark it instead so
+                   it can be styled as a deliberate blank. #}
+                <div class="bird{% if not imagePath %} bird-no-image{% endif %}"
+                     {% if imagePath %}style="background-image: url('{{ imagePath }}');"{% endif %}>
                     <a href="{{ pagePath }}">
                         <div class="bird-name">
                             {{ entity.props["http://schema.org/name"].fwd[0].value }}
