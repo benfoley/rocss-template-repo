@@ -188,7 +188,13 @@
         <h1 class="page-title">{{ itemName }}</h1>
         <nav class="page-nav">
           <a href="../../../../../ro-crate-preview.html"{% if activeName | lower == "home" %} class="nav-current" aria-current="page"{% endif %}>Home</a>
-          {% for collectionId in (data.types["RepositoryCollection"] or []).concat(data.types["Collection"] or []) %}
+          {# #derivedContent's hasPart, not a crate-wide type scan — its order
+             is the builder-defined menu order, and it excludes #sourceDocuments,
+             which has no page of its own. #}
+          {% set derivedContentEntity = data.ids["#derivedContent"] %}
+          {% set derivedContentParts = derivedContentEntity.props["http://schema.org/hasPart"].fwd if derivedContentEntity and derivedContentEntity.props["http://schema.org/hasPart"] else [] %}
+          {% for partRef in derivedContentParts %}
+            {% set collectionId = partRef.target_id %}
             {% set collectionEntity = data.ids[collectionId] %}
             {% set collectionName = collectionEntity.props["http://schema.org/name"].fwd[0].value if collectionEntity and collectionEntity.props["http://schema.org/name"] and collectionEntity.props["http://schema.org/name"].fwd else collectionId %}
             {% set resolvedCollectionId = resolveDeepTargetId(collectionId, data, 0) | trim %}
