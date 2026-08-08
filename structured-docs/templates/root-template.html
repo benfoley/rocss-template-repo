@@ -281,7 +281,7 @@
 {% macro findActiveCollectionId(entityId, data, depth) %}
     {%- set depth = depth or 0 -%}
     {%- set entity = data.ids[entityId] -%}
-    {%- if entity and "Collection" in entity.type -%}
+    {%- if entity and ("Collection" in entity.type or "RepositoryCollection" in entity.type) -%}
         {{- entityId -}}
     {%- elif entity and depth < 25 and entity.props["http://schema.org/hasPart"] and entity.props["http://schema.org/hasPart"].rev and entity.props["http://schema.org/hasPart"].rev.length > 0 -%}
         {{- findActiveCollectionId(entity.props["http://schema.org/hasPart"].rev[0].target_id, data, depth + 1) -}}
@@ -349,7 +349,7 @@
         <h1 class="doc-page-title">{{ itemName }}</h1>
         <nav class="page-nav">
           <a href="ro-crate-preview.html"{% if activeName | lower == "home" %} class="nav-current" aria-current="page"{% endif %}>Home</a>
-          {% for collectionId in data.types["Collection"] %}
+          {% for collectionId in (data.types["RepositoryCollection"] or []).concat(data.types["Collection"] or []) %}
             {% set collectionEntity = data.ids[collectionId] %}
             {% set collectionName = collectionEntity.props["http://schema.org/name"].fwd[0].value if collectionEntity and collectionEntity.props["http://schema.org/name"] and collectionEntity.props["http://schema.org/name"].fwd else collectionId %}
             {% set resolvedCollectionId = resolveDeepTargetId(collectionId, data, 0) | trim %}
@@ -416,7 +416,7 @@
         <div class="article-grid">
             {% for part in item.props["http://schema.org/hasPart"].fwd %}
                 {% set entity = data.ids[part.target_id] %}
-                {% if entity and "Collection" in entity.type and entity.props and "http://schema.org/name" in entity.props and entity.props["http://schema.org/name"].fwd %}
+                {% if entity and ("Collection" in entity.type or "RepositoryCollection" in entity.type) and entity.props and "http://schema.org/name" in entity.props and entity.props["http://schema.org/name"].fwd %}
                 {% set resolvedTargetId = resolveDeepTargetId(part.target_id, data, 0) | trim %}
                 {% set pagePath = data.pages[resolvedTargetId].path if data.pages[resolvedTargetId] else '' %}
                 {% set memberCount = entity.props["http://schema.org/hasPart"].fwd.length if entity.props["http://schema.org/hasPart"] else 0 %}

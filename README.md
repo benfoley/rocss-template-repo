@@ -45,25 +45,24 @@ multipage site originally built directly against an RO-Crate.
 
 ## Per-site keys
 
-Two `config.json` keys carry placeholder values in the templates in this repo,
-because their real values only make sense for one particular crate:
-`homePageId` ships blank, and `domain` ships as `http://example.com`. Both are
-safe to leave empty — an empty string switches the feature off rather than
-half-applying it. Fill them in on your own copy:
+Two `config.json` keys hold values that only really make sense for one
+particular crate. Override them on your own copy — both degrade sensibly if you
+leave them blank rather than half-applying:
 
 - **`homePageId`** — the `@id` of an entity to render as the landing page
-  instead of the root entity. The `structured-docs` root template resolves it
-  and falls back to the root view when it is blank or does not match an entity
-  in the crate — so a *wrong* value fails silently, showing the root page with
-  no error, exactly as a blank one does. Check it against a real `@id` in your
-  `ro-crate-metadata.json`.
+  instead of the root entity. `structured-docs` ships `#AnmWeb1_HOME`, matching
+  a source folder named `AnmWeb1_HOME`; entity ids follow the folder names, so
+  yours will differ. When it is blank or matches no entity the root template
+  falls back to the root view, which lists each collection as a card — so a
+  wrong value degrades to the collection index rather than erroring. Check it
+  against a real `@id` in your `ro-crate-metadata.json`.
 - **`domain`** — the bare hostname the site will be published under. It is used
   to build absolute `og:url` and `og:image` values for social-media preview
   cards; left blank, the whole Open Graph block is skipped.
 
 ```json
 {
-  "homePageId": "#MyCollection-HOME",
+  "homePageId": "#MyCollection_HOME",
   "domain": "https://example.org/my-site"
 }
 ```

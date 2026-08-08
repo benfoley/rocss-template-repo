@@ -1,6 +1,6 @@
 {
     "multipage": true,
-    "homePageId": "",
+    "homePageId": "#AnmWeb1_HOME",
     "domain": "http://example.com",
     "types": {
       "RepositoryCollection": {"template": "templates/collection-template.html"},
