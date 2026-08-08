@@ -45,19 +45,21 @@ multipage site originally built directly against an RO-Crate.
 
 ## Per-site keys
 
-Two `config.json` keys are deliberately absent from the templates in this repo,
-because their values only make sense for one particular crate. Add them to your
-own copy of a config when you need them:
+Two `config.json` keys carry placeholder values in the templates in this repo,
+because their real values only make sense for one particular crate:
+`homePageId` ships blank, and `domain` ships as `http://example.com`. Both are
+safe to leave empty — an empty string switches the feature off rather than
+half-applying it. Fill them in on your own copy:
 
 - **`homePageId`** — the `@id` of an entity to render as the landing page
   instead of the root entity. The `structured-docs` root template resolves it
-  and falls back to the root view when it is missing or does not match an
-  entity in the crate — so a stale value fails *silently*, showing the root
-  page with no error. Check it against a real `@id` in your
+  and falls back to the root view when it is blank or does not match an entity
+  in the crate — so a *wrong* value fails silently, showing the root page with
+  no error, exactly as a blank one does. Check it against a real `@id` in your
   `ro-crate-metadata.json`.
 - **`domain`** — the bare hostname the site will be published under. It is used
   to build absolute `og:url` and `og:image` values for social-media preview
-  cards; without it those tags are omitted.
+  cards; left blank, the whole Open Graph block is skipped.
 
 ```json
 {

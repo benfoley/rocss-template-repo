@@ -1,5 +1,7 @@
 {
     "multipage": true,
+    "homePageId": "",
+    "domain": "http://example.com",
     "types": {
       "RepositoryCollection": {"template": "templates/collection-template.html"},
       "Collection": {"template": "templates/collection-template.html"},
