@@ -349,8 +349,10 @@
         <h1 class="doc-page-title">{{ itemName }}</h1>
         <nav class="page-nav">
           <a href="ro-crate-preview.html"{% if activeName | lower == "home" %} class="nav-current" aria-current="page"{% endif %}>Home</a>
-          {# Iterate root hasPart to preserve the builder-defined collection order #}
-          {% set rootEntity = data.ids["./"] %}
+          {# Iterate #derivedContent's hasPart (not the root dataset's own — the
+             root's only members are #derivedContent and #sourceDocuments) to
+             preserve the builder-defined collection order. #}
+          {% set rootEntity = data.ids["#derivedContent"] %}
           {% set rootParts = rootEntity.props["http://schema.org/hasPart"].fwd if rootEntity and rootEntity.props["http://schema.org/hasPart"] else [] %}
           {% for partRef in rootParts %}
             {% set collectionId = partRef.target_id %}
@@ -408,6 +410,11 @@
 
 {% macro display(data, class) %}
     {% set item = data.ids[data.entryPoint] %}
+    {# Only ever called for the root page. The cards shown are #derivedContent's
+       members (the per-topic RepositoryCollections), not the root dataset's own
+       hasPart — the root's only members are #derivedContent and #sourceDocuments,
+       and #sourceDocuments has no page of its own to link a card to. #}
+    {% set gridSource = data.ids["#derivedContent"] %}
 
     <div id="{{item.id}}" class="{{class}}">
         <div class="header-row">
@@ -418,9 +425,9 @@
             </h2>
         </div>
 
-        {% if item.props["http://schema.org/hasPart"] and item.props["http://schema.org/hasPart"].fwd.length > 0 %}
+        {% if gridSource.props["http://schema.org/hasPart"] and gridSource.props["http://schema.org/hasPart"].fwd.length > 0 %}
         <div class="article-grid">
-            {% for part in item.props["http://schema.org/hasPart"].fwd %}
+            {% for part in gridSource.props["http://schema.org/hasPart"].fwd %}
                 {% set entity = data.ids[part.target_id] %}
                 {% if entity and ("Collection" in entity.type or "RepositoryCollection" in entity.type) and entity.props and "http://schema.org/name" in entity.props and entity.props["http://schema.org/name"].fwd %}
                 {% set resolvedTargetId = resolveDeepTargetId(part.target_id, data, 0) | trim %}
