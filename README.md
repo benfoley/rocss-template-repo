@@ -10,7 +10,7 @@ are supported:
 One folder, no subfolders: a `config.json`, a `style.css`, and one
 `template.html`, referenced by bare filename from `config.json`
 (`"root": {"template": "template.html"}`, `"style": "style.css"`). See
-`dyirbal/` for a working example. Use this when one root template covers
+`language-resources/` for a working example. Use this when one root template covers
 every page (`config.json`'s `multipage` is `false` or omitted).
 
 ### Multipage (bundle)
