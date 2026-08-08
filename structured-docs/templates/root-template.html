@@ -349,16 +349,22 @@
         <h1 class="doc-page-title">{{ itemName }}</h1>
         <nav class="page-nav">
           <a href="ro-crate-preview.html"{% if activeName | lower == "home" %} class="nav-current" aria-current="page"{% endif %}>Home</a>
-          {% for collectionId in (data.types["RepositoryCollection"] or []).concat(data.types["Collection"] or []) %}
+          {# Iterate root hasPart to preserve the builder-defined collection order #}
+          {% set rootEntity = data.ids["./"] %}
+          {% set rootParts = rootEntity.props["http://schema.org/hasPart"].fwd if rootEntity and rootEntity.props["http://schema.org/hasPart"] else [] %}
+          {% for partRef in rootParts %}
+            {% set collectionId = partRef.target_id %}
             {% set collectionEntity = data.ids[collectionId] %}
-            {% set collectionName = collectionEntity.props["http://schema.org/name"].fwd[0].value if collectionEntity and collectionEntity.props["http://schema.org/name"] and collectionEntity.props["http://schema.org/name"].fwd else collectionId %}
-            {% set resolvedCollectionId = resolveDeepTargetId(collectionId, data, 0) | trim %}
-            {% set collectionPath = data.pages[resolvedCollectionId].path if data.pages[resolvedCollectionId] else '' %}
-            {% if collectionName | lower == "home" %}
-              {# Already represented by the fixed "Home" link above; skip to avoid a duplicate entry. #}
-            {% elif collectionPath %}
-              <span class="nav-sep">|</span>
-              <a href="{{ collectionPath }}"{% if collectionId == activeCollectionId %} class="nav-current" aria-current="page"{% endif %}>{{ collectionName }}</a>
+            {% if collectionEntity and ("Collection" in collectionEntity.type or "RepositoryCollection" in collectionEntity.type) %}
+              {% set collectionName = collectionEntity.props["http://schema.org/name"].fwd[0].value if collectionEntity.props["http://schema.org/name"] and collectionEntity.props["http://schema.org/name"].fwd else collectionId %}
+              {% set resolvedCollectionId = resolveDeepTargetId(collectionId, data, 0) | trim %}
+              {% set collectionPath = data.pages[resolvedCollectionId].path if data.pages[resolvedCollectionId] else '' %}
+              {% if collectionName | lower == "home" %}
+                {# Already represented by the fixed "Home" link above; skip to avoid a duplicate entry. #}
+              {% elif collectionPath %}
+                <span class="nav-sep">|</span>
+                <a href="{{ collectionPath }}"{% if collectionId == activeCollectionId %} class="nav-current" aria-current="page"{% endif %}>{{ collectionName }}</a>
+              {% endif %}
             {% endif %}
           {% endfor %}
         </nav>
